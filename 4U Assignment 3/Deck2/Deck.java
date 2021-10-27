@@ -27,11 +27,9 @@ import java.util.*;
  * order from Ace to numbered cards to face cards, from suit Spades to Hearts to
  * Diamonds to Clubs.
  *
- * Public methods this class provides:
+ * Public instance methods this class provides:
  *
- *    * `String[] shuffle()`: shuffles all the cards in the instance randomly.
- *      Returns array with the cards in the new order; the instance will also store
- *      the cards in the new order.
+ *    * `void shuffle()`: shuffles all the cards into a new random order.
  *
  *    * `String toString()`: Displays the entire deck in its current state, whether
  *      shuffled or not.
@@ -86,10 +84,7 @@ public class Deck {
 
 
 	/**
-	 * Shuffles the internal deck with any amount of elements. Returns a copy
-	 * of the final array, but this does not need to be stored: the instance
-	 * of the final array, but this does not need to be stored: the instance
-	 * deck will also be modified.
+	 * Shuffles the internal deck to a new random order.
 	 *
 	 * The method works by:
 	 * (1) taking a card at random from the internal string array this.deck
@@ -97,9 +92,9 @@ public class Deck {
 	 * (2) removing that card from this.deck, whose length decreases by 1.
 	 *
 	 * By repeating these two steps a newDeck with random order can be created
-	 * from the original deck.
+	 * from the original deck with exactly this.deck.length number of loops
 	 */
-	public String[] shuffle() {
+	public void shuffle() {
 		Random rand = new Random(); // initialize to create random ints
 
 		String[] newDeck = new String[this.deck.length]; // array containing new order of cards
@@ -119,7 +114,6 @@ public class Deck {
 
 		// Set internal deck to new order; also return this array
 		this.deck = newDeck;
-		return newDeck;
 	} /* End method shuffle */
 
 
@@ -130,9 +124,16 @@ public class Deck {
 	 * The length of the internal deck will decrease by one and all elements
 	 * after pos will shift to the left by one.
 	 *
+	 * Specifying an invalid position will result in no changes being made.
+	 *
 	 * @param pos position of the card to remove
 	 */
 	private void removeCard(int pos) {
+		if ((pos < 0) || (pos > (this.deck.length - 1))) {
+			// The position given is invalid!
+			return;
+		}
+
 		// Create a new deck with one element to be removed
 		String[] newDeck = new String[this.deck.length - 1];
 

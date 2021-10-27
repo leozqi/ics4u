@@ -1,12 +1,15 @@
 /*
- * Deck.java
+ * CardDeck.java
  *
  * 4U Assignment 3, Question 3
  *
  * By Leo Qi: 2021-10-27
  *
- * This program provides the "Deck" public class to simulate a standard deck of
- * cards, and three methods, shuffle, Deal, and toString, for question 3.
+ * This program provides the "CardDeck" public class to simulate a standard deck
+ * of cards, and three methods, shuffle, Deal, and toString, for question 3.
+ *
+ * The methods that answer question 3 are the instance method shuffle(), the
+ * STATIC toString method, and the Deal() instance method.
  *
  * Everything is implemented with Java arrays, ArrayList, and the java.util.Arrays
  * class.
@@ -25,31 +28,31 @@ import java.util.*;
  * order from Ace to numbered cards to face cards, from suit Spades to Hearts to
  * Diamonds to Clubs.
  *
- * Public methods this class provides:
+ * Public instance methods this class provides:
  *
- *    * `String[] shuffle()`: shuffles all the cards in the instance randomly.
- *      Returns array with the cards in the new order; the instance will also store
- *      the cards in the new order.
+ *    * `void shuffle()`: shuffles all the cards into a new random order.
  *
- *    * `String toString()`: shuffles all the cards in the instance and returns
- *      a string listing the cards in their shuffled order.
+ *    * `String toString()`: Displays the entire deck in its current state, whether
+ *      shuffled or not.
  *
- *    * `void Deal()`: deals five cards each to two players from the top of the
- *      instance's card deck. DOES NOT SHUFFLE beforehand; call shuffle() before
- *      to deal cards in a shuffled order.
- *
- *    * `void Deal(int handSize)`: deal handSize cards each to two players from
- *      the top of the instance's card deck. DOES NOT SHUFFLE beforehand; call
- *      shuffle() before to deal cards in a shuffled order. Prints an error
- *      message if there are not enough cards in the deck for the size specified
- *      for two players.
+ *    * `void Deal(int handSize (optional), boolean showSymbols (optional))`:
+ *      Deals out handSize cards to two hands and prints them on the screen.
+ *        * handSize: how many cards to deal to each of the two hands. 5 is default.
+ *          If handSize is greater than can be dealt with the deck's cards, an error
+ *          will be printed out. `false` is default.
+ *        * showSymbols: If showSymbols is set to true, will show Unicode card symbols.
+ *          when displaying each hand.
+ *          This is not the default because some terminals do not support displaying
+ *          these playing card characters, but can be called on a terminal that
+ *          supports it like Replit's online Java terminal.
  *
  * Static methods this class provides:
  *
- *    * `static String toString(Deck d)`: same as toString, but takes a Deck in as input
- *      and returns the result of its toString() call.
+ *    * `static String toString(CardDeck d)`: same as toString but shuffles first.
+ *      Takes a CardDeck instance as input, shuffles it, and then displays its
+ *      new shuffled order.
  */
-public class Deck {
+public class CardDeck {
 	private final String[] TYPES = { // Stores all the possible types of cards
 		"Ace", "2", "3", "4", "5", "6", "7", "8", "9", "10",
 		"Jack", "Queen", "King"
@@ -58,13 +61,14 @@ public class Deck {
 		"Spades", "Hearts", "Diamonds", "Clubs"
 	};
 
-	private ArrayList<String> deck; // Private field storing cards
+	// Private Arraylist storing cards: position 1 is the "top of the deck"
+	private ArrayList<String> deck;
 
 
 	/**
 	 * Initializes a deck of 52 standard cards. (See the standardDeck method)
 	 */
-	public Deck() {
+	public CardDeck() {
 		this.deck = this.standardDeck();
 	} /* End constructor */
 
@@ -79,13 +83,13 @@ public class Deck {
 		ArrayList<String> d = new ArrayList<String>();
 
 		// Iterate over four suits starting with "Spades"
-		// Index stores current position in d for iteration
-		for (int suit = 0, index = 0; suit < 4; suit++) {
+		for (int suit = 0; suit < 4; suit++) {
 			// Iterate over 13 types starting with "Ace" for each suit
 			for (int type = 0; type < 13; type++) {
 				// Each "card" string will be made of a word from
 				// TYPES, a word from SUITS, and "of" in the middle
-				// Increment index by 1 after it is used to store next card in next place
+				// Increment index by 1 after it is used to store
+				// next card in next place
 				d.add(this.TYPES[type] + " of " + this.SUITS[suit]);
 			}
 		}
@@ -94,7 +98,7 @@ public class Deck {
 
 
 	/**
-	 * Shuffles the internal deck with any amount of elements.
+	 * Shuffles the internal deck to a new random order.
 	 *
 	 * The method works by:
 	 * (1) taking a card at random from the internal ArrayList this.deck
@@ -141,7 +145,7 @@ public class Deck {
 	 * Static version of toString() that takes in a Deck and returns its
 	 * string representation AFTER shuffling it first.
 	 */
-	public static String toString(Deck d) {
+	public static String toString(CardDeck d) {
 		d.shuffle();
 		return d.toString();
 	}
@@ -152,10 +156,16 @@ public class Deck {
 	 * card if needed. Deal will NOT shuffle the cards.
 	 *
 	 * Specifying a hand size greater than possible will output a printed error.
+	 *
+	 * @param handSize size of each player's hand.
+	 * @param showSymbols if showSymbols is true, prints out Unicode card
+	 *        symbols as well as their names like (🂡) for Ace of Spades.
+	 *        If the card symbol in the brackets above is not rendered, the
+	 *        editor font may not support the playing card UTF-8 code block.
 	 */
-	public void Deal(int handSize) {
+	public void Deal(int handSize, boolean showSymbols) {
 		// Clear the terminal screen before printing anything
-		this.clearTerminal();
+		clearTerminal();
 
 		// Hand size for two players is greater than length; print error and exit
 		if (handSize * 2 > this.deck.size()) {
@@ -179,17 +189,37 @@ public class Deck {
 
 		// Print hands with a method separate from Deal function to
 		// allow different ways of showing the cards if needed.
-		// For now the printHandsU method is used, but the printHands
-		// method (a previous version) could also be used for cards
-		// names only with no Unicode card symbols.
-		printHandsU(hand1, hand2, 200);
+
+		// IF showSymbols is true, use the printHandsU method to display
+		// Unicode card symbols along with card Strings; otherwise
+		// just display the strings with printHands.
+		if (showSymbols) {
+			printHandsU(hand1, hand2, 200);
+		} else {
+			printHands(hand1, hand2, 200);
+		}
 	} /* End method Deal */
 
 
 	/**
-	 * Overload Deal for a default hand size of five.
+	 * Overload Deal for a default hand size of five for two players.
+	 * Also turn off Unicode card symbols because support is not guaranteed
+	 * on terminals/IDEs/consoles.
 	 */
-	public void Deal() { Deal(5); }
+	public void Deal() { Deal(5, false); }
+
+
+	/**
+	 * Overload Deal for a variable hand size, but turning off Unicode card
+	 * symbols by default.
+	 */
+	public void Deal(int handSize) { Deal(handSize, false); }
+
+
+	/**
+	 * Overload Deal to show symbols
+	 */
+	public void Deal(boolean showSymbols) { Deal(5, showSymbols); }
 
 
 	/**
@@ -335,7 +365,8 @@ public class Deck {
 	/**
 	 * Get unicode character representing a playing card of form
 	 * "<type> of <suit>" where type is in this.TYPES and suit is in
-	 * this.SUITS
+	 * this.SUITS. If passed String is not of form <type> of <suit>
+	 * Ace of Spades is the default.
 	 *
 	 * @param card a playing card string of form "<type> of <suit>"
 	 * @return string with single unicode playing card (codePoint)
@@ -343,6 +374,7 @@ public class Deck {
 	private String getUCard(String card) {
 		// Split the string representing a card into three components:
 		// <type>, "of", and <suit>
+		// through cutting them off at the spaces.
 		String[] construct = card.split(" ");
 
 		// Card symbols reference in hexadecimal for Unicode:
@@ -388,4 +420,4 @@ public class Deck {
 		// then to a String to use easily.
 		return String.valueOf(Character.toChars(code));
 	} /* End method getUCard */
-} /* End class Deck */
+} /* End class CardDeck */
