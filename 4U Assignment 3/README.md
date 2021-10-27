@@ -29,7 +29,7 @@ public static void main(String[] args) {
 
 ```
 
-(2) Create a class called Deck that has 2 methods. The first is called shuffle which will shuffle the order of your entire deck (all 52 cards which are strings). The other method is called toString() which takes in the deck as a parameter and displays the entire deck in its new shuffled order.
+(2) Create a class called Deck that has 2 methods. The first is called shuffle which will shuffle the order of your entire deck (all 52 cards which are strings). The other method is called toString() which takes in the deck as a parameter and displays the entire deck in its new shuffled order. THIS MAY ONLY USE ARRAYS
 
 ```text
 
@@ -39,7 +39,7 @@ Ace of Clubs
 
 ```
 
-(3) Create a class similar to number 2 using an arrayList, expect this class has 3 methods. It has the same shuffle and toString as the last question but it also has a method called Deal, which deals out 2 hands of 5 cards (which are given after shuffling). Reminder: you must deal each player one card at a time.
+(3) Create a class similar to number 2 using an arrayList, expect this class has 3 methods. It has the same shuffle and toString as the last question but it also has a method called Deal, which deals out 2 hands of 5 cards (which are given after shuffling). Reminder: you must deal each player one card at a time. THIS MAY USE ARRAYLIST
 
 Make two smaller arrays to hold each
 

@@ -29,9 +29,13 @@ public class Tamagotchi {
 
 	/**
 	 * Private method to ensure that value is within the boundaries low-high
-	 * inclusive;
-	 *     if it is over return high (highest value)
-	 *     if it is under return low (lowest value)
+	 * inclusive; if it is not either return highest or lowest bound.
+	 *
+	 * @param value value to guarantee within bounds
+	 * @param low lowest possible value
+	 * @param high highest possible value
+	 *
+	 * @return
 	 */
 	private int bound(int value, int low, int high) {
 		if (value > high) {
@@ -39,7 +43,7 @@ public class Tamagotchi {
 		} else if (value < low) {
 			return low;     // value is lower bound so return lowest
 		} else {
-			return value;   // value is okay in between bound
+			return value;   // value is okay; is in between bound
 		}
 	} /* End private method bound */
 
