@@ -7,13 +7,13 @@ class Main {
 
 		Tamagotchi Bob = new Tamagotchi("Bob");
 		System.out.println(Bob.toString());
-		for(int i=0;i<1440;i++) {
+		for(int i=0;i<1297;i++) {
 		Bob.age();
 		//
 		if (i%2==0) {
 		Bob.play();
 		Bob.scold();
-		Bob.feed();
+//		Bob.feed();
 		}
 
 		}
