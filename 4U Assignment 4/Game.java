@@ -65,16 +65,14 @@ public class Game extends JPanel implements ActionListener {
 			P_WIDTH, P_HEIGHT
 		);
 
-		double traj = random.nextInt(20);
-		if (random.nextBoolean()) {
-			traj *= -1; // for negative trajectories
-		}
+		double traj = random.nextInt(10)+1;
+		System.out.println(traj);
 
 		this.ball = new Ball(
-			HorizontalD.LEFT,
 			this.centreX() - B_SIZE, this.centreY() - B_SIZE,
 			B_SIZE,
-			traj
+			traj,
+			B_SPD
 		);
 
 		int msFrameDelay =  (int) (1000d / FRAMES_SEC);
@@ -123,13 +121,13 @@ public class Game extends JPanel implements ActionListener {
 
 	public void update() {
 		Rectangle2D.Double ballPos = ball.getBounds();
-		// Move paddles
-		if (player.touching(ballPos)
-			|| computer.touching(ballPos)
-			|| ballPos.getMaxY() >= S_WIDTH
-			|| ballPos.getMinY() <= 0) {
-			ball.calcTraj();
-		}
+
+		ball.calcTraj(
+			player.touching(ballPos),
+			computer.touching(ballPos),
+			S_WIDTH, S_HEIGHT,
+			player.getBounds(), computer.getBounds()
+		);
 
 		player.move(P_SPD);
 
@@ -144,7 +142,7 @@ public class Game extends JPanel implements ActionListener {
 		}
 		computer.move(P_SPD);
 
-		ball.move(B_SPD);
+		ball.move(S_WIDTH, S_HEIGHT);
 	}
 
 	public void actionPerformed(ActionEvent e) {

@@ -47,39 +47,46 @@ public class Ball {
 			return;
 		}
 
+		//double newRise = this.shape.getY() - this.startY;
+		//double newRun = this.shape.getX() - this.startX;
+
+		//this.angle = Math.toDegrees(Math.atan(newRise / newRun));
+		//System.out.println(angle);
+		
 		double yChange = this.shape.getY() - this.startY;
 		double xChange = this.shape.getX() - this.startX;
+		
+		if ((!pTouch) && (!cTouch)) {
+			if (yChange > 0) {
+				// Ball was moving higher, flip
+				this.vFace = VerticalD.DOWN;
+			} else if (yChange < 0) {
+				this.vFace = VerticalD.UP;
+			} else {
+				this.vFace = VerticalD.NEUTRAL;
+			}
+		}
 
-		if (pTouch || cTouch || this.shape.getMaxX() >= maxW || this.shape.getMinX() <= 0) {
-			// Bounced off vertical obstruction; only X is flipped
+		if (pTouch || cTouch) {
 			if (xChange > 0) {
-				// Flip from right to left
 				this.hFace = HorizontalD.LEFT;
 			} else if (xChange < 0) {
 				this.hFace = HorizontalD.RIGHT;
 			} else {
 				this.hFace = HorizontalD.NEUTRAL;
 			}
-		}
 
-		if (this.shape.getMinY() <= 0 || this.shape.getMaxY() >= maxH) {
-			// Bounced off horizontal obstruction; only Y is flipped
-			if (yChange > 0) {
-				// Flip from down to up
-				this.vFace = VerticalD.UP;
-			} else if (yChange < 0) {
-				this.vFace = VerticalD.DOWN;
-			} else {
-				this.vFace = VerticalD.NEUTRAL;
+			if (pTouch) {
+				this.angle += Math.floor(
+					(player.getCenterY() - this.shape.getCenterY())
+					/ this.shape.width
+				);
+			} else if (cTouch) {
+				this.angle += Math.floor(
+					(computer.getCenterY() - this.shape.getCenterY())
+					/ this.shape.width
+				);
 			}
-		}
-
-		double calcVal = 0;
-		if (pTouch)      { calcVal = player.getCenterY();   }
-		else if (cTouch) { calcVal = computer.getCenterY(); }
-
-		if (pTouch || cTouch) {
-			this.angle = (Math.abs(calcVal - this.shape.getCenterY()) / 37.5d) * 50;
 		}
 
 		this.startX = this.shape.getX();
@@ -88,17 +95,13 @@ public class Ball {
 		this.speed *= 1.05;
 
 		this.toggle = true;
-		
-		System.out.println(this.hFace);
-		System.out.println(this.vFace);
-		System.out.println(this.angle);
 	}
 
 	public void move(double maxW, double maxH) {
-		double x = Math.cos(Math.toRadians(this.angle)) * this.speed;
-		double y = Math.sin(Math.toRadians(this.angle)) * this.speed;
+		double x = Math.cos(this.angle) * this.speed;
+		double y = Math.sin(this.angle) * this.speed;
 
-		if (this.vFace == VerticalD.UP) {
+		if (this.vFace == VerticalD.DOWN) {
 			y *= -1;
 		}
 		if (this.hFace == HorizontalD.LEFT) {
