@@ -3,6 +3,7 @@ package pong;
 import java.awt.*;
 import java.awt.geom.*;
 import java.awt.event.*;
+import java.util.Random;
 
 import static pong.Constants.*;
 
@@ -11,7 +12,9 @@ public class Paddle extends KeyAdapter {
 	private HorizontalD side;
 	private VerticalD movingTo;
 	private Rectangle2D.Double shape;
-
+	private double yTarget; // For COMPUTER_SMART
+	private Random randGen = new Random();
+	private CalcObj prevCalc = new CalcObj(0, VerticalD.NEUTRAL);
 
 	public Paddle(Mode mode, HorizontalD side) {
 		super();
@@ -85,32 +88,78 @@ public class Paddle extends KeyAdapter {
 		}
 		this.shape.setRect(
 			xPos,
-			Constants.centreY() - (P_HEIGHT / 2),
+			S_CENTRE_Y - (P_HEIGHT / 2),
 			P_WIDTH,
 			P_HEIGHT
 		);
 	}
 
 
-	public void calculateDirection(Rectangle2D.Double ballBox) {
-		if (this.mode == Mode.PLAYER) {
-			return;
-		}
-
+	public void calcDirection(Rectangle2D.Double ballBox, Rectangle2D.Double oppBox, boolean oppTouching, CalcObj calc) {
 		switch (this.mode) {
+		case PLAYER:
+			return;
 		case COMPUTER_SIMPLE:
-			if (ballBox.getCenterY() > this.shape.getCenterY()) {
-				this.changeDirection(VerticalD.DOWN);
-			} else if (ballBox.getCenterY() < this.shape.getCenterY()) {
-				this.changeDirection(VerticalD.UP);
-			} else {
-				this.changeDirection(VerticalD.NEUTRAL);
+			this.yTarget = ballBox.getCenterY();
+			break;
+		case COMPUTER_SMART:
+			if (calc.dir != VerticalD.NEUTRAL) {
+				this.calcSmart(ballBox, oppBox, calc);
 			}
 			break;
 		}
+
+		if (this.yTarget > this.shape.getCenterY()) {
+			this.changeDirection(VerticalD.DOWN);
+		} else if (this.yTarget < this.shape.getCenterY()) {
+			this.changeDirection(VerticalD.UP);
+		} else {
+			this.changeDirection(VerticalD.NEUTRAL);
+		}
 	}
 
+
+	private void calcSmart(Rectangle2D.Double ballBox, Rectangle2D.Double oppBox, CalcObj calc) {
+		this.yTarget = ballBox.getCenterY();
+		double dBallX = Math.abs(ballBox.getCenterX() - this.shape.getCenterX());
+		double dBallY;
+
+		double y = 0;
+
+		double xCounter = 0;
+
+		while (dBallX > 0) {
+			dBallY = xCounter * Math.tan(Math.toRadians(calc.angle));
+
+			switch (calc.dir) {
+			case UP:
+				y = ballBox.getCenterY() - dBallY;
+				break;
+			case DOWN:
+				y = ballBox.getCenterY() + dBallY;
+				break;
+			}
+
+			if (y <= 0 || y >= S_HEIGHT) {
+				if (calc.dir == VerticalD.UP) { calc.dir = VerticalD.DOWN; }
+				else { calc.dir = VerticalD.UP; }
+
+				xCounter = 0;
+			}
+			xCounter += G_UNIT;
+			dBallX -= G_UNIT;
+		}
+
+		this.yTarget = y;
+	}
+
+
 	public void move(double speed) {
+		if (this.mode != Mode.PLAYER
+			&& (Math.abs(this.yTarget - this.shape.getCenterY()) < 5)) {
+			return; // within good enough threshold
+		}
+
 		switch (this.movingTo) {
 		case UP:
 			this.shape.setRect(
@@ -154,6 +203,32 @@ public class Paddle extends KeyAdapter {
 		this.reset();
 	}
 
+
+	public String getName() {
+		String s = "";
+		switch (this.mode) {
+		case PLAYER:
+			s += "Player";
+			break;
+		case COMPUTER_SIMPLE:
+			s += "Simple CPU";
+			break;
+		case COMPUTER_SMART:
+			s += "Smart CPU";
+			break;
+		}
+		
+		switch (this.side) {
+		case LEFT:
+			s += ": Left";
+			break;
+		case RIGHT:
+			s += ": Right";
+			break;
+		}
+
+		return s;
+	}
 
 	public boolean touching(Rectangle2D.Double rect) {
 		return this.shape.intersects(

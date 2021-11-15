@@ -27,8 +27,8 @@ public class Ball {
 
 
 	public void reset() {
-		this.startX = Constants.centreX() - B_SIZE;
-		this.startY = Constants.centreY() - B_SIZE;
+		this.startX = S_CENTRE_X - B_SIZE;
+		this.startY = S_CENTRE_Y - B_SIZE;
 		this.angle  = this.startAngle();
 		
 		this.facingUp    = this.randGen.nextBoolean();
@@ -51,7 +51,7 @@ public class Ball {
 	}
 
 
-	public void calcAngle(
+	public CalcObj calcAngle(
 		boolean lTouch, boolean rTouch,
 		Rectangle2D.Double lBox, Rectangle2D.Double rBox
 	) {
@@ -61,9 +61,13 @@ public class Ball {
 			|| (this.shape.getMaxY() >= S_HEIGHT)
 			|| (this.shape.getMinY() <= 0))) {
 			this.toggle = false;
-			return;
+			if (this.facingUp) {
+				return new CalcObj(this.angle, VerticalD.UP);
+			} else {
+				return new CalcObj(this.angle, VerticalD.DOWN);
+			}
 		} else if (this.toggle) {
-			return;
+			return new CalcObj(0, VerticalD.NEUTRAL);
 		}
 
 		if (lTouch || rTouch || this.shape.getMaxX() >= S_WIDTH || this.shape.getMinX() <= 0) {
@@ -98,6 +102,12 @@ public class Ball {
 
 		this.speed *= 1.05;
 		this.toggle = true;
+
+		if (this.facingUp) {
+			return new CalcObj(this.angle, VerticalD.UP);
+		} else {
+			return new CalcObj(this.angle, VerticalD.DOWN);
+		}
 	}
 
 

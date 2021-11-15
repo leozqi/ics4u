@@ -21,8 +21,10 @@ public final class Constants {
 	public static final int    G_UNIT     = 20;
 	public static final double FRAMES_SEC = 1000d;
 
-	public static final int S_WIDTH  = 57 * G_UNIT;
-	public static final int S_HEIGHT = 35 * G_UNIT;
+	public static final int S_WIDTH    = 57 * G_UNIT;
+	public static final int S_HEIGHT   = 35 * G_UNIT;
+	public static final int S_CENTRE_X = (S_WIDTH / 2) + 1;
+	public static final int S_CENTRE_Y = (S_HEIGHT / 2) + 1;
 
 	/* Paddle constants */
 
@@ -46,8 +48,5 @@ public final class Constants {
 	public static final Color C_BACK = Color.black;
 	public static final int F_SIZE = 5 * G_UNIT;
 	public static final int F_PAD = G_UNIT;
-
-	public static int centreX() { return (S_WIDTH / 2) + 1;  }
-	public static int centreY() { return (S_HEIGHT / 2) + 1; }
 }
 

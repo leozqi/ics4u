@@ -2,6 +2,8 @@ package pong;
 
 import javax.swing.*;
 
+import static pong.Constants.*;
+
 class Frame extends JFrame {
 	public Frame() {
 		Game g = new Game();
@@ -17,6 +19,18 @@ class Frame extends JFrame {
 
 public class Main {
 	public static void main(String[] args) {
+		UIManager.put("Panel.background", C_BACK);
+		UIManager.put("Panel.foreground", C_FORE);
+
+		UIManager.put("Button.background", C_BACK);
+		UIManager.put("Button.foreground", C_FORE);
+
+		UIManager.put("RadioButton.background", C_BACK);
+		UIManager.put("RadioButton.foreground", C_FORE);
+
+		UIManager.put("Label.background", C_BACK);
+		UIManager.put("Label.foreground", C_FORE);
+
 		Frame f = new Frame();
 	}
 }
