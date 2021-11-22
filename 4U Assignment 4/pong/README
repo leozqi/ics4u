@@ -1,0 +1,11 @@
+## Pong
+
+Pong in Java for Assignment 4U #4!
+
+## Making a JAR
+
+Go to directory
+
+```
+jar cvfm Pong.jar manifest.mf pong/
+``` 

@@ -19,7 +19,7 @@ public final class Constants {
 	 */
 
 	public static final int    G_UNIT     = 20;
-	public static final double FRAMES_SEC = 1000d;
+	public static final double FRAMES_SEC = 120d;
 
 	public static final int S_WIDTH    = 57 * G_UNIT;
 	public static final int S_HEIGHT   = 35 * G_UNIT;

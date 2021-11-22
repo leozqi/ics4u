@@ -16,6 +16,7 @@ public class Paddle extends KeyAdapter {
 	private Random randGen = new Random();
 	private CalcObj prevCalc = new CalcObj(0, VerticalD.NEUTRAL);
 
+
 	public Paddle(Mode mode, HorizontalD side) {
 		super();
 
@@ -25,6 +26,7 @@ public class Paddle extends KeyAdapter {
 
 		this.reset();
 	} /* End constructor */
+
 
 	public Paddle() {
 		this(Mode.COMPUTER_SIMPLE, HorizontalD.LEFT);
@@ -68,10 +70,19 @@ public class Paddle extends KeyAdapter {
 		}
 
 		int code = e.getKeyCode();
-		
-		if ((this.side == HorizontalD.LEFT && (code == KeyEvent.VK_W || code == KeyEvent.VK_S))
-			|| (this.side == HorizontalD.RIGHT && (code == KeyEvent.VK_UP || code == KeyEvent.VK_DOWN))) {
-			// Set neutral
+
+		// This event will be given to ALL paddles
+		// Only apply to the relevant paddle
+		// (Where the KeyEvent corresponds with the paddle's side)
+		if ((
+			this.side == HorizontalD.LEFT &&
+			(code == KeyEvent.VK_W || code == KeyEvent.VK_S)
+			)
+			||
+			(
+			this.side == HorizontalD.RIGHT &&
+			(code == KeyEvent.VK_UP || code == KeyEvent.VK_DOWN)
+		)) {
 			this.changeDirection(VerticalD.NEUTRAL);
 		}
 	}
@@ -84,7 +95,7 @@ public class Paddle extends KeyAdapter {
 		if (this.side == HorizontalD.LEFT) {
 			xPos = 0 + P_SPACE;
 		} else {
-			xPos = S_WIDTH - P_SPACE;
+			xPos = S_WIDTH - P_SPACE - P_WIDTH;
 		}
 		this.shape.setRect(
 			xPos,
@@ -154,11 +165,13 @@ public class Paddle extends KeyAdapter {
 	}
 
 
-	public void move(double speed) {
+	public void move(double time) {
 		if (this.mode != Mode.PLAYER
 			&& (Math.abs(this.yTarget - this.shape.getCenterY()) < 5)) {
 			return; // within good enough threshold
 		}
+
+		double speed = time * P_SPD;
 
 		switch (this.movingTo) {
 		case UP:
@@ -204,7 +217,8 @@ public class Paddle extends KeyAdapter {
 	}
 
 
-	public String getName() {
+	@Override
+	public String toString() {
 		String s = "";
 		switch (this.mode) {
 		case PLAYER:
@@ -226,9 +240,9 @@ public class Paddle extends KeyAdapter {
 			s += ": Right";
 			break;
 		}
-
 		return s;
 	}
+
 
 	public boolean touching(Rectangle2D.Double rect) {
 		return this.shape.intersects(

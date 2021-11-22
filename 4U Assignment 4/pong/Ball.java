@@ -111,9 +111,10 @@ public class Ball {
 	}
 
 
-	public void move() {
-		double x = Math.cos(Math.toRadians(this.angle)) * this.speed;
-		double y = Math.sin(Math.toRadians(this.angle)) * this.speed;
+	public void move(double time) {
+		double actualSpd = time * this.speed;
+		double x = Math.cos(Math.toRadians(this.angle)) * actualSpd;
+		double y = Math.sin(Math.toRadians(this.angle)) * actualSpd;
 
 		if (this.facingUp)     { y *= -1; }
 		if (!this.facingRight) { x *= -1; } 
