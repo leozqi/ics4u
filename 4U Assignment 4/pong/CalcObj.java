@@ -1,3 +1,18 @@
+/*
+ * CalcObj.java
+ *
+ * 4U Assignment 4
+ *
+ * By Leo Qi: 2021-11-23
+ *
+ * This file provides the "CalcObj" public class as part of the "pong" package,
+ * which recreates the game of Pong in Java.
+ *
+ * The "CalcObj" class stores both an angle in degrees and a vertical direction
+ * in one object.
+ */
+
+
 package pong;
 
 /**

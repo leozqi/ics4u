@@ -1,4 +1,17 @@
+/*
+ * VerticalD.java
+ *
+ * 4U Assignment 4
+ *
+ * By Leo Qi: 2021-11-23
+ *
+ * This file provides the "VerticalD" public class as part of the "pong" package,
+ * which recreates the game of Pong in Java.
+ */
+
+
 package pong;
+
 
 /**
  * Provides the vertical directions / positions possible in Pong.

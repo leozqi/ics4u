@@ -1,3 +1,17 @@
+/*
+ * Paddle.java
+ *
+ * 4U Assignment 4
+ *
+ * By Leo Qi: 2021-11-23
+ *
+ * This file provides the "Paddle" public class as part of the "pong" package,
+ * which recreates the game of Pong in Java.
+ *
+ * The "Paddle" class represents a Paddle in the game of Pong.
+ */
+
+
 package pong;
 
 import java.awt.*;

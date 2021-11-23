@@ -1,3 +1,15 @@
+/*
+ * HorizontalD.java
+ *
+ * 4U Assignment 4
+ *
+ * By Leo Qi: 2021-11-23
+ *
+ * This file provides the "HorizontalD" public class as part of the "pong"
+ * package, which recreates the game of Pong in Java.
+ */
+
+
 package pong;
 
 /**

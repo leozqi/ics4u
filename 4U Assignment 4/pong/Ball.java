@@ -1,3 +1,17 @@
+/*
+ * Ball.java
+ *
+ * 4U Assignment 4
+ *
+ * By Leo Qi: 2021-11-23
+ *
+ * This file provides the "Ball" public class as part of the "pong" package,
+ * which recreates the game of Pong in Java.
+ *
+ * The "Ball" class represents the ball in the game of Pong.
+ */
+
+
 package pong;
 
 import java.awt.*;
@@ -158,13 +172,13 @@ public class Ball {
 		// 1. Touching left paddle.
 		// 2. Touching right paddle.
 		// 3. Out of bounds.
-		if (!(lTouch || rTouch || (!this.ballInBounds()))) {
+		if ((!lTouch) && (!rTouch) && this.ballInBounds()) {
 			// The ball is NOT touching anything or out of bounds
-			// Continue to return current CalcObj status.
+			// No need to recalculate: continue to return.
 
 			// Ball is no longer touching anything, toggle.
 			this.toggle = false;
-			// Return CalcObj based on boolean
+			// Return CalcObj based on boolean of ball's current
 			if (this.facingUp) {
 				return new CalcObj(this.angle, VerticalD.UP);
 			} else {

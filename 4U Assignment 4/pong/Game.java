@@ -1,3 +1,17 @@
+/*
+ * Game.java
+ *
+ * 4U Assignment 4
+ *
+ * By Leo Qi: 2021-11-23
+ *
+ * This file provides the "Game" public class as part of the "pong" package,
+ * which recreates the game of Pong in Java.
+ *
+ * The "Game" class extends the JPanel class to actually render the Pong game.
+ */
+
+
 package pong;
 
 import java.awt.*;
@@ -703,18 +717,6 @@ public class Game extends JPanel implements ActionListener {
 		// Don't update any element positions if the game is paused
 		if (this.paused) { return; }
 
-		/* Check scores to end game if necessary */
-
-		if (lScore >= 10) {
-			// New game with left paddle as winner
-			this.newGame(HorizontalD.LEFT);
-			return;
-		} else if (rScore >= 10) {
-			// New game with right paddle as winner
-			this.newGame(HorizontalD.RIGHT);
-			return;
-		}
-
 		/* Check if either paddle has scored a point in a game */
 
 		// Get bound box of ball.
@@ -722,14 +724,23 @@ public class Game extends JPanel implements ActionListener {
 		if (ballPos.getMaxX() >= S_WIDTH) {
 			// lPaddle point (ball over right edge)
 			this.lScore++;
-
-			// "pause" the game for G_PAUSE seconds and then start a new round
-			this.pause();
+			// Check if the game can be ended
+			if (lScore >= 10) {
+				// Start a new game
+				this.newGame(HorizontalD.LEFT);
+			} else {
+				// "pause" the game for G_PAUSE seconds and then start a new round
+				this.pause();
+			}
 			return; // No need to move game elements below if paused
 		} else if (ballPos.getMinX() <= 0) {
 			// rPaddle point (ball over left edge)
 			this.rScore++;
-			this.pause();
+			if (rScore >= 10) {
+				this.newGame(HorizontalD.RIGHT);
+			} else {
+				this.pause();
+			}
 			return;
 		}
 

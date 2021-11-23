@@ -1,3 +1,17 @@
+/*
+ * Constants.java
+ *
+ * 4U Assignment 4
+ *
+ * By Leo Qi: 2021-11-23
+ *
+ * This file provides the "Constants" public class as part of the "pong" package,
+ * which recreates the game of Pong in Java.
+ *
+ * The "Constants" class provides common constants for the "pong" package.
+ */
+
+
 package pong;
 
 import java.awt.Color; // For Colour constants
@@ -37,7 +51,7 @@ public final class Constants {
 	 */
 
 	public static final int    G_UNIT     = 15;
-	public static final double FRAMES_SEC = 60d;
+	public static final double FRAMES_SEC = 120d;
 
 	/* Game constants */
 

@@ -1,3 +1,17 @@
+/*
+ * Mode.java
+ *
+ * 4U Assignment 4
+ *
+ * By Leo Qi: 2021-11-23
+ *
+ * This file provides the "Mode" public class as part of the "pong" package,
+ * which recreates the game of Pong in Java.
+ *
+ * The "Mode" class represents the different modes possible for a Paddle object.
+ */
+
+
 package pong;
 
 

@@ -1,10 +1,31 @@
 ## Pong
 
-Pong in Java for Assignment 4U #4!
+Name: Leo Qi
+Date: Nov. 23, 2021.
+
+The `pong` package creates a game of Pong in Java for 4U Assignment #4.
+
+Features:
+
+* Paddles can be controlled the W/S keys for the left paddle, and Up arrow/Down arrow keys for the right paddle.
+* A paddle can also be a "CPU player". The "Simple CPU" only follows the ball but the "Smart CPU" tries to calculate where the ball will end up.
+* A start menu is available to pick what type each paddle will be.
+* Matches are up to 10 rounds.
+* The movement animations are smooth, but there may be slight lag on keyboard input due to the difference in time being different for each frame and/or a lot of CPU usage due to the continuous updating and drawing of the game elements: Ball, Paddle, etc.
+
+Details:
+
+* All source files are located in the `pong` directory.
+* The main class and entry point of the game is the Main class (Main.java)
+* The Constants class holds common constants used by most of the other classes. They include the height and width of the game field, initial speed of a Ball, and size of the ball/paddle.
+* The Game class displays the actual game and a start menu built with Swing components. It uses a thread to continuously update the game as shown in the Pong Assignment description and copied in this file, with some adjustments.
+* The Ball class and the Paddle class define both the ball and the paddle and have methods to make them move used by the Game class.
+* The CalcObj class provides a way to pass a CPU Paddle angle information of the ball so that the Paddle can calculate where it should go. 
+* The HorizontalD, VerticalD, and Mode enums allow the other classes to specify horizontal directions, vertical directions, and the mode of a paddle without using strings.
 
 ## Assignment information
 
-Pong Assignment:
+*Copied from Pong Assignment:*
 
 Your goal will be to recreate the game “pong” using java. You may add extra aesthetics if you would like, but most important is making sure the game runs and runs efficiently.
 
@@ -50,6 +71,28 @@ Grading Criteria:
 2. Is your code functional and concise? 14 marks
 3. Do you have comments on all necessary materials? 2 marks
 
+## Running the code
+
+To run the program without creating a JAR file, I started in the root directory of the project and compiled the source files into a build directory:
+
+```bash
+mkdir build
+javac -d ./build/ ./pong/*.java
+```
+
+Then I could run the program from the entry class:
+
+```bash
+cd build
+java pong.Main
+```
+
+## The manifest.mf file
+
+I found that without a manifest file, my JAR file would not know which initial file to execute. I followed the instructions on [the Java docs](https://docs.oracle.com/javase/tutorial/deployment/jar/appman.html) to write a manifest file with the single key `Main-class` of value `pong.Main`.
+
+By including this manifest into my JAR file, my JAR file was able to start my program at launch.
+
 ## Making a JAR
 
 Go to root directory and make a build subdirectory:
@@ -58,18 +101,18 @@ Go to root directory and make a build subdirectory:
 mkdir build
 ```
 
-Compile all source files (no need to change directory into `build`):
+Compile all source files into build:
 
 ```bash
 javac -d ./build/ ./pong/*.java
 ```
 
-Create a `.jar`:
+Create a `.jar` with a manifest: I used [this section of the Java docs](https://docs.oracle.com/javase/tutorial/deployment/jar/build.html)
 
 ```bash
 cd build
-jar cvfm Pong.jar ../manifest.mf ./pong/
-``` 
+jar cfvm Pong.jar ../manifest.mf ./pong/
+```
 
 Run:
 
