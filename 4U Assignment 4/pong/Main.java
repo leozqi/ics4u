@@ -5,6 +5,9 @@ import javax.swing.*;
 import static pong.Constants.*;
 
 
+/**
+ * Provides a window for the display panel provided by the Game class.
+ */
 class Frame extends JFrame {
 	/**
 	 * Create a new JFrame.
@@ -13,7 +16,7 @@ class Frame extends JFrame {
 	 */
 	public Frame() {
 		/* Set common options */
-		this.setTitle("Pong");
+		this.setTitle(G_TITLE); // Title is a defined constant
 		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		this.setResizable(false);
 		this.setVisible(true);
@@ -22,10 +25,13 @@ class Frame extends JFrame {
 		/* Create a Game object to start the game */
 		this.add(new Game());
 		this.pack();
-	}
-}
+	} /* End default constructor */
+} /* End class Frame */
 
 
+/**
+ * Provides the main method to start the game.
+ */
 public class Main {
 	/**
 	 * Start the program by creating an initial GUI.
@@ -70,4 +76,4 @@ public class Main {
 		// Create the game frame
 		Frame f = new Frame();
 	} /* End method run */
-}
+} /* End class Main */
