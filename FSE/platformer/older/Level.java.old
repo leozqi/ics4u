@@ -1,0 +1,128 @@
+// ------------------------------------------------------------------------- //
+// Stores one single level of the game.                                      //
+//                                                                           //
+// Author:      Leo Qi                                                       //
+// Start date:  2022-01-02                                                   //
+// Finish date:                                                              //
+// ------------------------------------------------------------------------- //
+
+package platformer;
+
+import java.net.URL;
+import java.io.IOException;
+import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.InputStreamReader;
+import java.io.File;
+import java.util.ArrayList;
+import java.nio.charset.Charset;
+
+class LevelInfo {
+
+	public ArrayList<String> rows;
+	public int rowNum;
+	public int colNum;
+
+	public LevelInfo() {
+		rows = new ArrayList<String>();
+		rowNum = 0;
+		colNum = 0;
+	} /* End constructor */
+
+
+	public void addRow(String row) {
+		rows.add(row);
+	}
+}
+
+
+class LevelMap {
+
+	TileMap[][] map;
+	int rows;
+	int columns;
+
+	public LevelMap(int rows, int columns) {
+		this.rows = rows;
+		this.columns = columns;
+
+		this.map = new TileMap[this.rows][this.columns];
+	} /* End constructor */
+
+
+	public LevelMap() {
+		this(1, 1);
+	} /* End default constructor */
+
+
+	public void setBlock(int x, int y, TileMap type) {
+		synchronized(this.map) {
+			this.map[x][y] = type;
+		}
+	}
+
+
+	public static LevelMap loadFromInfo(LevelInfo info) {
+		LevelMap ret = new LevelMap(info.rowNum, info.colNum);
+		String s;
+		char[] c;
+		for (int i = 0; i < info.rowNum; i++) {
+			s = info.rows.get(i);
+			for (int j = 0; j < s.length(); j++) {
+				ret.setBlock(i, j, TileMap.fromChar(Biome.SWAMPY, s.codePointAt(j)));
+			}
+		}
+		return ret;
+	}
+}
+
+
+public class Level {
+
+	LevelMap map;
+
+	public Level(String filePath) {
+		URL url = this.getClass().getResource(filePath);
+
+		if (url == null) {
+			this.map = new LevelMap();
+			return;
+		}
+
+		LevelInfo i = loadFromFile(url);
+		this.map = LevelMap.loadFromInfo(i);
+	}
+
+
+	public LevelInfo loadFromFile(URL url) {
+		BufferedReader stdin;
+		LevelInfo ret = new LevelInfo();
+		int gRow = 0;
+		int gCol = 0;
+		Charset c = Charset.forName("UTF-8");
+		try {
+			stdin = new BufferedReader(
+				new InputStreamReader(
+				new FileInputStream(
+				new File(url.toURI())),
+				c
+			));
+
+			String ln = stdin.readLine();
+			while (ln != null) {
+				ret.addRow(ln);
+				if (ln.length() > gCol) {
+					gCol = ln.length();
+				}
+				ln = stdin.readLine();
+				gRow++;
+			}
+			stdin.close();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		ret.rowNum = gRow;
+		ret.colNum = gCol;
+		return ret;
+	} /* End method loadFromFile */
+}

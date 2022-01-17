@@ -369,7 +369,7 @@ public class Game extends JPanel implements ActionListener {
 			count++;
 		}
 
-		// Reset the ball's position before starting the game.
+		// Reset the ball's position before starting the game
 		this.ball.reset();
 
 		// Begin the game by setting running to true.
@@ -384,6 +384,9 @@ public class Game extends JPanel implements ActionListener {
 
 		// Hide the menu
 		this.menu.setVisible(false);
+
+		// Pause the game at start for moment to prepare
+		this.pause();
 	} /* End method startGame */
 
 
@@ -575,10 +578,21 @@ public class Game extends JPanel implements ActionListener {
 		);
 
 		if (this.paused) {
-			this.showMsg(g2d, "Get ready!", HorizontalD.LEFT, VerticalD.NEUTRAL);
-			this.showMsg(g2d, "Get ready!", HorizontalD.RIGHT, VerticalD.NEUTRAL);
+			// Show "get ready" message when game is paused
+			String lAdd = ""; // Extra message to add on left
+			String rAdd = ""; // Extra message to add on right
+
+			if (this.lPaddle.getMode() == Mode.PLAYER) {
+				lAdd = " (W/S) keys to move";
+			}
+			if (this.rPaddle.getMode() == Mode.PLAYER) {
+				rAdd = " (Up/Down) keys to move";
+			}
+			// Show messages:
+			this.showMsg(g2d, "Get ready!"+lAdd, HorizontalD.LEFT, VerticalD.NEUTRAL);
+			this.showMsg(g2d, "Get ready!"+rAdd, HorizontalD.RIGHT, VerticalD.NEUTRAL);
 		}
-	}
+	} /* End method paint */
 
 
 	/**
