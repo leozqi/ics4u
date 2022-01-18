@@ -12,6 +12,7 @@ import java.awt.*;
 import javax.swing.*;
 import java.awt.geom.*;
 import java.awt.image.BufferedImage;
+import java.awt.geom.Point2D.Double;
 
 public class Game extends JPanel {
 
@@ -21,25 +22,42 @@ public class Game extends JPanel {
 	boolean running = true;
 	Renderer renderer;
 	private double clock;
+	Player player;
+	SpriteHandler handleP1;
 
 	public Game() {
 		this.setPreferredSize(new Dimension(Settings.resX, Settings.resY));
 		this.setFocusable(true);
 
 		this.tileHandle = SpriteHandler.createFromFile(
-			this, "/resources/tiles.png", Settings.internUnit,
+			this, "/resources/tiles.png",
+			Settings.internUnit, Settings.internUnit,
 			Settings.internSep, Settings.internSep
 		);
 		if (this.tileHandle == null) {
 			System.out.println("Could not be loaded");
 		}
 
+		this.handleP1 = SpriteHandler.createFromFile(
+			this, "/resources/p1.png",
+			33, 46,
+			Settings.internSep, Settings.internSep
+		);
+		if (this.tileHandle == null) {
+			System.out.println("P1 resources could not be loaded.");
+		}
+
 		this.lvl = new Level("/resources/lvl1.lvl");
 		if (this.lvl == null) {
 			System.out.println("Level could not be loaded");
 		}
-		cam = new Camera(this.lvl.getLevel(this.tileHandle), 1.0);
 
+		this.player = new Player("Bob", 100, handleP1, new Rectangle2D.Double(80, 50, 33, 46), null);
+
+		cam = new Camera(this.lvl.getLevel(this.tileHandle), 1.0, player);
+
+
+		this.addKeyListener(player);
 		this.renderer = new Renderer();
 		this.renderer.start();
 	} /* End constructor */
@@ -88,12 +106,8 @@ public class Game extends JPanel {
 
 
 	public void update(double diffT) {
+		player.update(diffT, this.lvl.getBounds());
 		if (this.clock > 100) {
-			System.out.println("" + this.lvl.getBounds().contains(5, 5));
-			System.out.println("" + this.lvl.getBounds().isEmpty());
-			System.out.println("" + this.lvl.getBounds().isPolygonal());
-			System.out.println("" + this.lvl.getBounds().isRectangular());
-			this.clock = 0;
 			return;
 		}
 		this.clock += diffT;
@@ -111,11 +125,7 @@ public class Game extends JPanel {
 
 		Point r = new Point(p.x - screenLoc.x, p.y - screenLoc.y);
 
-		g2d.drawImage(cam.getView(), r.x, r.y, null);
-		/*
-		BufferedImage bi = img1.getSubimage(xScroll, yScroll, xDim, yDim);
-		g2d.drawImage(bi, 0, 0, null);
-		*/
+		cam.beam(g2d);
 	} /* End method paint */
 
 } /* End class Game */

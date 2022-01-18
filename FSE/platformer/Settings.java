@@ -14,6 +14,9 @@ public final class Settings {
 	public static int resX = 800;
 	public static int resY = 450;
 
+	public static int halfResX = 400;
+	public static int halfResY = 225;
+
 	public static int internResX = 560; // Scales to units of 70
 	public static int internResY = 315;
 
@@ -22,5 +25,7 @@ public final class Settings {
 
 	public static final double FRAMES_SEC = 120d;
 	public static final double NANOS = 1000000000d / FRAMES_SEC;
+
+	public static final double P_MAX_SPD = 2;
 
 } /* End class Settings */

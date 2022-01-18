@@ -14,9 +14,35 @@ import java.util.ArrayList;
 import java.nio.charset.Charset;
 import java.awt.image.BufferedImage;
 import java.awt.*;
-import java.awt.geom.Area;
+import java.awt.geom.*;
+import java.awt.geom.Path2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.geom.Rectangle2D.Double;
+
+/*
+class Bounds {
+
+	private ArrayList<Rectangle2D.Double> bounds;
+
+	public Bounds() {
+		bounds = new ArrayList<Rectangle2D.Double>();
+	}
+
+	public boolean intersects(Shape s) {
+		for (int i = 0; i < bounds.size(); i++) {
+			if (s.intersects(bounds.get(i))) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	public void add(Rectangle2D r) {
+		synchronized(bounds) {
+			bounds.add((Rectangle2D.Double)r);
+		}
+	}
+}*/
 
 public class Level {
 
@@ -31,7 +57,8 @@ public class Level {
 	 */
 	private TileMap[][] map;
 	private int rows, columns;
-	private Area bounds;
+	//private Bounds bounds = new Bounds();
+	private Area bounds = new Area();
 
 	/**
 	 * The Level class holds the data for one level.
@@ -44,7 +71,6 @@ public class Level {
 		this.rows = 0;
 		this.columns = 0;
 		ArrayList<String> tmp = new ArrayList<String>();
-		this.bounds = new Area();
 		try {
 			stdin = new BufferedReader(
 				new InputStreamReader(
@@ -91,8 +117,8 @@ public class Level {
 			this.map[row][col] = type;
 			if (!type.isPassable()) {
 				this.bounds.add(new Area(new Rectangle2D.Double(
+					0 + (col*Settings.internUnit),
 					0 + (row*Settings.internUnit),
-					0+(col*Settings.internUnit),
 					Settings.internUnit,
 					Settings.internUnit)
 				));
@@ -148,8 +174,8 @@ public class Level {
 	} /* End method getLevel */
 
 
-	public Area getBounds() {
-		return this.bounds;
+	public Shape getBounds() {
+		return bounds;
 	}
 
 } /* End class Level */

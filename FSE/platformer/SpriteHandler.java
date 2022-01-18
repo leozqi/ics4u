@@ -17,19 +17,22 @@ public class SpriteHandler {
 	private BufferedImage sheet;
 	private int xPixels;
 	private int yPixels;
-	private int tilePixels;
+	private int tileX;
+	private int tileY;
 	private int xOffset;
 	private int yOffset;
 
 
 	public SpriteHandler(
 		BufferedImage sheet, int xPixels, int yPixels,
-		int tilePixels, int xOffset, int yOffset
+		int tileX, int tileY, int xOffset, int yOffset
 	) {
 		this.sheet = sheet;
 		this.xPixels = xPixels;
 		this.yPixels = yPixels;
-		this.tilePixels = tilePixels;
+
+		this.tileX = tileX;
+		this.tileY = tileY;
 
 		this.xOffset = xOffset;
 		this.yOffset = yOffset;
@@ -37,14 +40,14 @@ public class SpriteHandler {
 
 
 	public SpriteHandler(
-		BufferedImage sheet, int xPixels, int yPixels, int tilePixels
+		BufferedImage sheet, int xPixels, int yPixels, int tileX, int tileY
 	) {
-		this(sheet, xPixels, yPixels, tilePixels, 0, 0);
+		this(sheet, xPixels, yPixels, tileX, tileY, 0, 0);
 	} /* End constructor */
 
 
 	public static SpriteHandler createFromFile(
-		Object caller, String relPath, int tilePixels, int xOffset, int yOffset
+		Object caller, String relPath, int tileX, int tileY, int xOffset, int yOffset
 	) {
 		BufferedImage img = null;
 		URL url = caller.getClass().getResource(relPath);
@@ -60,7 +63,7 @@ public class SpriteHandler {
 		}
 		return new SpriteHandler(
 			img, img.getWidth(), img.getHeight(),
-			tilePixels, xOffset, yOffset
+			tileX, tileY, xOffset, yOffset
 		);
 	} /* End static method createFromFile */
 
@@ -81,10 +84,13 @@ public class SpriteHandler {
 		}
 
 		return this.sheet.getSubimage(
-			(gridX * this.tilePixels) + (gridX * this.xOffset), // x
-			(gridY * this.tilePixels) + (gridY * this.yOffset),
-			this.tilePixels, this.tilePixels
+			(gridX * this.tileX) + (gridX * this.xOffset), // x
+			(gridY * this.tileY) + (gridY * this.yOffset),
+			this.tileX, this.tileY
 		);
 	} /* End method getTile */
+
+	public int getXSize() { return this.tileX; }
+	public int getYSize() { return this.tileY; }
 
 } /* End class SpriteHandler */
