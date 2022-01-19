@@ -15,6 +15,7 @@ import java.io.IOException;
 
 public class SpriteHandler {
 	private BufferedImage sheet;
+	private BufferedImage reversed;
 	private int xPixels;
 	private int yPixels;
 	private int tileX;
@@ -28,6 +29,7 @@ public class SpriteHandler {
 		int tileX, int tileY, int xOffset, int yOffset
 	) {
 		this.sheet = sheet;
+		this.reversed = Utilities.horizontalFlip(sheet);
 		this.xPixels = xPixels;
 		this.yPixels = yPixels;
 
@@ -89,6 +91,22 @@ public class SpriteHandler {
 			this.tileX, this.tileY
 		);
 	} /* End method getTile */
+
+
+	public BufferedImage getReversedTile(int gridX, int gridY) throws IllegalArgumentException {
+		if (gridX < 0 || gridY < 0) {
+			throw new IllegalArgumentException(
+				"SpriteHandler.getReversedTile -> Inputs cannot be negative."
+			);
+		}
+
+		return this.reversed.getSubimage(
+			(gridX * this.tileX) + (gridX * this.xOffset),
+			(gridY * this.tileY) + (gridY * this.yOffset),
+			this.tileX, this.tileY
+		);
+	} /* End method getReversedTile */
+
 
 	public int getXSize() { return this.tileX; }
 	public int getYSize() { return this.tileY; }

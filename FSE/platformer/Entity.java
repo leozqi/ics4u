@@ -98,16 +98,14 @@ public class Entity {
 	 * Updated conditions are constant regardless of time between frames
 	 * due to use of a difference in time diffT.
 	 *
+	 * Classes inheriting Entity should override this method to implement
+	 * their own functionality.
+	 *
 	 * @param diffT difference in time
 	 * @param bounds Shape representing collision boxes entity should be
 	 *               aware of.
 	 */
-	public void update(double diffT, Shape bounds) {
-
-		adjustVelocity(diffT);
-		boundedMove(diffT*this.xVel, diffT*this.yVel, bounds);
-		System.out.println(this.jumpCnt);
-	} /* End method update */
+	public void update(double diffT, Shape bounds) {}
 
 
 	/**
@@ -115,7 +113,7 @@ public class Entity {
 	 *
 	 * @param diffT time adjustment between frames.
 	 */
-	private void adjustVelocity(double diffT) {
+	public void adjustVelocity(double diffT) {
 		if (this.xAccel > 0) {
 			if (this.xVel < 0.5 && this.xVel > 0) {
 				this.xVel = 0.5;
@@ -246,8 +244,11 @@ public class Entity {
 
 	/**
 	 * Return the sprite of the current animation step.
+	 *
+	 * Classes inheriting the Entity class should change this to a different
+	 * return value reflecting the SpriteHandler and SpriteSheet they use.
 	 */
-	public BufferedImage getSprite() { return sh.getTile(1, 0); }
+	public BufferedImage getSprite() { return sh.getTile(0, 0); }
 
 
 	/**
@@ -292,6 +293,12 @@ public class Entity {
 	public synchronized void setVelX(double vel) { this.xVel = vel; }
 	public synchronized void setVelY(double vel) { this.yVel = vel; }
 
+
+	public boolean isMovingLeft() { return (this.xAccel < 0); }
+	public boolean isMovingRight() { return (this.xAccel > 0); }
+	public boolean isMovingUp() { return (this.yAccel < 0); }
+	public boolean isMovingDown() { return (this.yAccel > 0); }
+	public boolean isTouchingGround() { return (this.yVel == 0); }
 
 	/**
 	 * Jump with a starting velocity of `vel`.

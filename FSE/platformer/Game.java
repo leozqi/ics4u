@@ -16,14 +16,20 @@ import java.awt.geom.Point2D.Double;
 
 public class Game extends JPanel {
 
-	SpriteHandler tileHandle;
+	/* SpriteHandlers */
+	SpriteHandler tileHandle;  // tileset
+	SpriteHandler handleP1;    // animations for player one
+	SpriteHandler handleItems; // tileset for items
+
+	/* Level management */
 	Level lvl;
+
+	/* Game */
 	Camera cam;
 	boolean running = true;
-	Renderer renderer;
 	private double clock;
 	Player player;
-	SpriteHandler handleP1;
+	Renderer renderer;
 
 	public Game() {
 		this.setPreferredSize(new Dimension(Settings.resX, Settings.resY));
@@ -40,15 +46,22 @@ public class Game extends JPanel {
 
 		this.handleP1 = SpriteHandler.createFromFile(
 			this, "/resources/p1.png",
-			33, 46,
-			Settings.internSep, Settings.internSep
+			36, 49, 0, 0
 		);
-		if (this.tileHandle == null) {
+		if (this.handleP1 == null) {
 			System.out.println("P1 resources could not be loaded.");
 		}
 
-		this.lvl = new Level("/resources/lvl1.lvl");
-		if (this.lvl == null) {
+		this.handleItems = SpriteHandler.createFromFile(
+			this, "/resources/items.png",
+			35, 35, 0, 0
+		);
+		if (this.handleItems == null) {
+			System.out.println("Handle items failed to load.");
+		}
+
+		this.lvl = new Level(tileHandle, Biome.SANDY);
+		if (!this.lvl.loadFile("/resources/lvl1.lvl")) {
 			System.out.println("Level could not be loaded");
 		}
 

@@ -26,6 +26,7 @@ public class TileMap {
 	private int yRange;
 	private boolean empty = false;
 	private boolean passable = false;
+	private boolean itembox = false;
 
 	TileMap(int gridX, int gridY, int xRange, int yRange) {
 		this.gridX = gridX;
@@ -36,9 +37,10 @@ public class TileMap {
 
 	TileMap(int gridX, int gridY) { this(gridX, gridY, 1, 1); }
 
-	TileMap(int gridX, int gridY, boolean passable) {
+	TileMap(int gridX, int gridY, boolean passable, boolean itembox) {
 		this(gridX, gridY, 1, 1);
 		this.passable = passable;
+		this.itembox = itembox;
 	}
 
 	TileMap() {
@@ -70,6 +72,13 @@ public class TileMap {
 			return this.passable;
 		}
 	}
+	public boolean isItemBox() {
+		if (this.empty) {
+			return false;
+		} else {
+			return this.itembox;
+		}
+	}
 
 	/* Layers: multiple TileMap arrays can form layers on top of existing textures */
 	public static TileMap fromChar(Biome b, int c) {
@@ -81,9 +90,9 @@ public class TileMap {
 		case 'O': // BLOCK_BORDER_BUTTON
 			return new TileMap(0, 8);
 		case '#': // BLOCK_BORDER_WARNING
-			return new TileMap(0, 5);
+			return new TileMap(0, 5, false, true);
 		case '%': // BLOCK_BORDER_EXCLAIM
-			return new TileMap(0, 0);
+			return new TileMap(0, 0, false, true);
 
 		case 'X': // BOX_CROSSED
 			return new TileMap(0, 11);
@@ -96,9 +105,9 @@ public class TileMap {
 		case '^': // OVERLAY_TORCH
 			return new TileMap(1, 1, 1, 3);
 		case '{': // OVERLAY_LADDER_TOP
-			return new TileMap(7, 1);
+			return new TileMap(7, 1, true, false);
 		case '[': // OVERLAY_LADDER
-			return new TileMap(7, 2);
+			return new TileMap(7, 2, true, false);
 		case '-': // GROUND
 			switch (b) {
 			case SWAMPY:

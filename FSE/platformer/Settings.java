@@ -11,8 +11,8 @@ package platformer;
 public final class Settings {
 
 	// Use 16:9 display (most common)
-	public static int resX = 800;
-	public static int resY = 450;
+	public static int resX = 1900;
+	public static int resY = 1080;
 
 	public static int halfResX = 400;
 	public static int halfResY = 225;

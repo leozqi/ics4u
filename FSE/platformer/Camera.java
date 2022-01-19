@@ -30,7 +30,7 @@ class Camera {
 		g2d.drawImage(
 			this.getView(),
 			Settings.halfResX - focus.getCentreX(),
-			Settings.halfResY - focus.getCentreY(),
+			(int)((Settings.halfResY * 1.3) - focus.getCentreY()),
 			null
 		);
 	} /* End method beam */
