@@ -12,6 +12,8 @@ import java.awt.image.BufferedImage;
 import javax.imageio.*;
 import java.net.URL;
 import java.io.IOException;
+import java.awt.geom.Area;
+import java.awt.geom.Rectangle2D;
 
 public class SpriteHandler {
 	private BufferedImage sheet;
@@ -22,6 +24,11 @@ public class SpriteHandler {
 	private int tileY;
 	private int xOffset;
 	private int yOffset;
+
+	private int rows;
+	private int cols;
+
+	private Rectangle2D.Double[][] tileBounds;
 
 
 	public SpriteHandler(
@@ -38,7 +45,23 @@ public class SpriteHandler {
 
 		this.xOffset = xOffset;
 		this.yOffset = yOffset;
+
+		this.cols = this.sheet.getWidth() / (this.tileX + this.xOffset);
+		this.rows = this.sheet.getHeight() / (this.tileY + this.yOffset);
+
+		this.tileBounds = new Rectangle2D.Double[rows][cols];
+
+		createExactBoundaries(rows, cols);
 	} /* End constructor */
+
+
+	public void createExactBoundaries(int rows, int cols) {
+		for (int row = 0; row < rows; row++) {
+			for (int col = 0; col < cols; col++) {
+				this.tileBounds[row][col] = Utilities.exactRectBounds(getTile(col, row), 0, 0);
+			}
+		}
+	};
 
 
 	public SpriteHandler(
@@ -86,8 +109,8 @@ public class SpriteHandler {
 		}
 
 		return this.sheet.getSubimage(
-			(gridX * this.tileX) + (gridX * this.xOffset), // x
-			(gridY * this.tileY) + (gridY * this.yOffset),
+			(this.tileX + this.xOffset) * gridX, // x
+			(this.tileY + this.yOffset) * gridY, // y
 			this.tileX, this.tileY
 		);
 	} /* End method getTile */
@@ -110,5 +133,7 @@ public class SpriteHandler {
 
 	public int getXSize() { return this.tileX; }
 	public int getYSize() { return this.tileY; }
+
+	public Rectangle2D.Double getBounds(int x, int y) { return tileBounds[y][x]; } 
 
 } /* End class SpriteHandler */

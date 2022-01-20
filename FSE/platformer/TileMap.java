@@ -18,6 +18,11 @@ enum Biome {
 	GRASSY
 }
 
+enum EntityType {
+	NONE,
+	PLAYER
+}
+
 public class TileMap {
 
 	private int gridX;
@@ -27,6 +32,7 @@ public class TileMap {
 	private boolean empty = false;
 	private boolean passable = false;
 	private boolean itembox = false;
+	private EntityType entityType = EntityType.NONE;
 
 	TileMap(int gridX, int gridY, int xRange, int yRange) {
 		this.gridX = gridX;
@@ -41,6 +47,13 @@ public class TileMap {
 		this(gridX, gridY, 1, 1);
 		this.passable = passable;
 		this.itembox = itembox;
+	}
+
+
+	TileMap(EntityType type) {
+		this(0, 0, 0, 0);
+		this.empty = true;
+		this.entityType = type;
 	}
 
 	TileMap() {
@@ -79,10 +92,15 @@ public class TileMap {
 			return this.itembox;
 		}
 	}
+	public EntityType getEntityType() {
+		return this.entityType;
+	}
 
 	/* Layers: multiple TileMap arrays can form layers on top of existing textures */
 	public static TileMap fromChar(Biome b, int c) {
 		switch (c) {
+		case 'P': // Player
+			return new TileMap(EntityType.PLAYER);
 		case 'b': // BLOCK
 			return new TileMap(3, 0);
 		case 'B': // BLOCK_BORDER_EMPTY
@@ -99,7 +117,7 @@ public class TileMap {
 		case 'x': // BOX_SLASH
 			return new TileMap(0, 12);
 		case '?': // BOX_MYSTERY
-			return new TileMap(1, 9);
+			return new TileMap(1, 9, false, true);
 		case '_': // OVERLAY_WINDOW
 			return new TileMap(1, 0);
 		case '^': // OVERLAY_TORCH

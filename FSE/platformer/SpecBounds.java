@@ -36,25 +36,32 @@ class SpecBounds {
 	} /* End method intersects */
 
 
-	public boolean intersectRemove(Shape s) {
-		int toRemoveCnt = 0;
-		Shape[] toRemove = new Rectangle2D.Double[bounds.size()];
+	public Shape intersectRemove(Shape s) {
+		Shape toRemove = null;
 		boolean toggle = false;
 
 		for (int i = 0; i < bounds.size(); i++) {
 			Shape tmp = bounds.get(i);
 			if (tmp.intersects(s.getBounds())) {
-				toRemove[toRemoveCnt] = tmp;
-				toRemoveCnt++;
+				toRemove = tmp;
 				toggle = true;
 			}
 		}
-		if (toggle) {
-			for (int j = 0; j < toRemove.length; j++) {
-				bounds.remove(toRemove[j]);
+		if (toggle && toRemove != null) {
+			bounds.remove(toRemove);
+			return toRemove;
+		}
+		return null;
+	} /* End method intersectRemove */
+
+
+	public Shape containsRemove(double x, double y) {
+		for (int i = 0; i < bounds.size(); i++) {
+			if (bounds.get(i).contains(x, y)) {
+				return (Shape) bounds.remove(i);
 			}
 		}
-		return toggle;
+		return null;
 	} /* End method intersectRemove */
 
 

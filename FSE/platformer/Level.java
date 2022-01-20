@@ -16,6 +16,7 @@ import java.awt.image.BufferedImage;
 import java.awt.*;
 import java.awt.geom.*;
 import java.awt.geom.Path2D;
+import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 
 public class Level {
@@ -38,6 +39,9 @@ public class Level {
 	// Stores total rows and cols of the level
 	private int rows = 0;
 	private int cols = 0;
+
+	// Starting coordinates of player
+	private Point2D.Double pCoords = new Point2D.Double(0, 0);
 
 	private Area bounds = new Area();            // Store normal bounds
 	private SpecBounds boxes = new SpecBounds(); // Store special boxes
@@ -143,12 +147,6 @@ public class Level {
 		if (this.map == null) { return; } // level is not loaded, exit
 
 		synchronized(this.map) {
-			try {
-				this.map[row][col] = type;
-			} catch (ArrayIndexOutOfBoundsException e) {
-				return; // row and column do not fit, exit.
-			}
-
 			if ((!type.isPassable()) || type.isItemBox()) {
 				// Get exact boundaries of tile
 				// The function strips all transparent space.
@@ -162,8 +160,24 @@ public class Level {
 					this.bounds.add(tmp);
 				}
 				if (type.isItemBox()) {
+					System.out.println("Item");
 					this.boxes.add(tmp);
 				}
+			}
+			EntityType entityType = type.getEntityType();
+			switch (entityType) {
+			case PLAYER:
+				this.pCoords = new Point2D.Double(
+					0 + (col * Settings.internUnit),
+					0 + (row * Settings.internUnit)
+				);
+				return;
+			}
+
+			try {
+				this.map[row][col] = type;
+			} catch (ArrayIndexOutOfBoundsException e) {
+				return; // row and column do not fit, exit.
 			}
 		}
 	} /* End method setBlock */
@@ -276,5 +290,8 @@ public class Level {
 	 * @return area of every item block
 	 */
 	public SpecBounds getSpecBounds() { return boxes; }
+
+
+	public Point2D.Double getPlayerStart() { return this.pCoords; }
 
 } /* End class Level */

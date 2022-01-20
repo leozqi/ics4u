@@ -73,11 +73,11 @@ public class Player extends Entity implements KeyListener {
 	@Override
 	public BufferedImage getSprite() {
 		if (super.isMovingRight()) {
-			return sh.getTile(spriteCnt, 0);
+			return costumes.getTile(spriteCnt, 0);
 		} else if (super.isMovingLeft()) {
-			return sh.getReversedTile(10 - spriteCnt, 0);
+			return costumes.getReversedTile(10 - spriteCnt, 0);
 		} else {
-			return sh.getTile(spriteCnt, 0);
+			return costumes.getTile(spriteCnt, 0);
 		}
 	} /* End getSprite */
 
@@ -88,15 +88,15 @@ public class Player extends Entity implements KeyListener {
 
 		switch (code) {
 		case KeyEvent.VK_W:
-			jump(-4);
+			jump(-Settings.P_JUMP);
 			break;
 		case KeyEvent.VK_S:
 			break;
 		case KeyEvent.VK_A:
-			setAccelX(-speed);
+			setAccelX(-Settings.P_SPD);
 			break;
 		case KeyEvent.VK_D:
-			setAccelX(speed);
+			setAccelX(Settings.P_SPD);
 			break;
 		}
 	} /* End method keyPressed */
