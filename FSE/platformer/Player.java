@@ -22,9 +22,8 @@ import java.awt.geom.*;
 
 public class Player extends Entity implements KeyListener {
 
-	double clock = 0d;
-	double yAccel = 0.10;
-	int spriteCnt = 0;
+	double yAccel = 0.09;
+	boolean lastLeft = false;
 
 	public Player(
 		String name, int hp, SpriteHandler sh, Rectangle2D bounds,
@@ -46,25 +45,30 @@ public class Player extends Entity implements KeyListener {
 	 */
 	@Override
 	public void update(double diffT, Shape bounds) {
-		super.adjustVelocity(diffT);
-		super.boundedMove(diffT*this.xVel, diffT*this.yVel, bounds);
+		super.update(diffT, bounds);
 
-		if (!super.isMovingLeft() && !super.isMovingRight()) {
-			clock = 0;
+		/* Adjust velX for friction, slip */
+		super.adjustVelX(diffT);
+		/* Adjust velY for gravity */
+		super.adjustVelY(diffT);
+
+		/* Bounded move takes obstacles into account */
+		super.boundedMove(
+			diffT * this.xVel * Settings.zoom(),
+			diffT * this.yVel * Settings.zoom(),
+			bounds
+		);
+	} /* End method update */
+
+
+	@Override
+	public void updateSprite() {
+		if (spriteCnt > 9) {
 			spriteCnt = 0;
 		} else {
-			clock += diffT;
-
-			if (clock > 10) {
-				if (spriteCnt > 9) {
-					spriteCnt = 0;
-				} else {
-					spriteCnt++;
-				}
-				clock = 0;
-			}
+			spriteCnt++;
 		}
-	} /* End method update */
+	} /* End method updateSprite */
 
 
 	/**
@@ -73,11 +77,14 @@ public class Player extends Entity implements KeyListener {
 	@Override
 	public BufferedImage getSprite() {
 		if (super.isMovingRight()) {
+			lastLeft = false;
 			return costumes.getTile(spriteCnt, 0);
 		} else if (super.isMovingLeft()) {
+			lastLeft = true;
 			return costumes.getReversedTile(10 - spriteCnt, 0);
 		} else {
-			return costumes.getTile(spriteCnt, 0);
+			return lastLeft ? costumes.getReversedTile(10 - spriteCnt, 0)
+				: costumes.getTile(spriteCnt, 0);
 		}
 	} /* End getSprite */
 
@@ -121,4 +128,5 @@ public class Player extends Entity implements KeyListener {
 
 	@Override
 	public void keyTyped(KeyEvent e) {}
-} /* End class Level */
+
+} /* End class Player */

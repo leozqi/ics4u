@@ -17,35 +17,31 @@ import java.util.Iterator;
 class Camera {
 
 	BufferedImage map;
-	double zoom;
 
-	public Camera(BufferedImage lvlMap, double zoom) {
+	public Camera(BufferedImage lvlMap) {
 		this.map = lvlMap;
-		this.zoom = zoom;
-
-		if (zoom != 1) {
-			this.map = Utilities.resize(
-				lvlMap,
-				(int) (lvlMap.getWidth()*zoom),
-				(int) (lvlMap.getHeight()*zoom)
-			);
-		} else {
-			this.map = lvlMap;
-		}
 	} /* End constructor */
 
 
-	public void beam(Graphics2D g2d, Entity focus, ArrayList<Item> items) {
+	public void beam(
+		Graphics2D g2d, Entity focus, ArrayList<Item> items,
+		ArrayList<Enemy> enemies, double zoom
+	) {
 		BufferedImage canvas = Utilities.copy(map);
 
 		Graphics2D brush = canvas.createGraphics();
 
 		// Draw focus
 		Point2D pF = focus.getPoint();
-		brush.drawImage(focus.getSprite(), (int)pF.getX(), (int)pF.getY(), null);
+		brush.drawImage(
+			focus.getSprite(),
+			(int)(pF.getX()),
+			(int)(pF.getY()),// * zoom),
+			null
+		);
 
 		Point2D pE;
-		Item subject;
+		Entity subject;
 		/* Draw all entity sets */
 		for (int i = 0; i < items.size(); i++) {
 			subject = null;
@@ -54,17 +50,39 @@ class Camera {
 
 			brush.drawImage(
 				subject.getSprite(),
-				(int)pE.getX(),
-				(int)pE.getY(),
+				(int)(pE.getX()),
+				(int)(pE.getY()),
+				null
+			);
+		}
+
+		/* Draw all enemies */
+		for (int i = 0; i < enemies.size(); i++) {
+			subject = enemies.get(i);
+			pE = subject.getPoint();
+
+			brush.drawImage(
+				subject.getSprite(),
+				(int)(pE.getX()),//*zoom),
+				(int)(pE.getY()),//*zoom),
 				null
 			);
 		}
 		brush.dispose();
 
+		double xCoord = ((Settings.resX() / 2) * zoom) - focus.getCentreX();
+		double yCoord = ((Settings.resY() / 2) * zoom * 1.3) - focus.getCentreY();
+
 		g2d.drawImage(
 			canvas,
-			Settings.halfResX - focus.getCentreX(),
-			(int)((Settings.halfResY * 1.3) - focus.getCentreY()),
+			(int)Math.max(
+				Settings.resX() - canvas.getWidth(),
+				Math.min(0, xCoord)
+			),
+			(int)Math.max(
+				Settings.resY() - canvas.getHeight(),
+				Math.min(0, yCoord)
+			),
 			null
 		);
 	} /* End method beam */

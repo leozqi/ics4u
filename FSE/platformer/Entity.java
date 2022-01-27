@@ -18,11 +18,11 @@ import java.util.ArrayList;
 import java.util.concurrent.*;
 
 enum Attribute {
-	DOUBLE_JUMP,
-	COIN_1,
-	COIN_10,
-	COIN_100,
-	HP_1
+	DOUBLE_JUMP, // Apply double jump
+	COIN_1,      // Give one coin
+	COIN_10,     // Give ten coins
+	COIN_100,    // Give one hundred coins
+	HP_1         // Give one health
 }
 
 public class Entity {
@@ -49,6 +49,11 @@ public class Entity {
 	int jumpCnt = 0; // Number of times entity has already jumped
                          // (before hitting the ground)
 	int jumpLimit = 1; // Limit of jumps before entity cannot jump
+	boolean right = false; // For enemy classes
+	double maxVel = Settings.P_MAX_SPD;
+	double clock = 0d; // Clock for sprite change cycles
+	double tickTime = 10d; // Time to effect one animation cycle
+	int spriteCnt; // current costume of sprite
 
 	/**
 	 * Create a new entity.
@@ -124,13 +129,29 @@ public class Entity {
 	 * due to use of a difference in time diffT.
 	 *
 	 * Classes inheriting Entity should override this method to implement
-	 * their own functionality.
+	 * their own functionality, and call super() to update common functions
+	 * of all entities.
 	 *
 	 * @param diffT difference in time
 	 * @param bounds shape representing collision boxes entity should be
 	 *               aware of.
 	 */
-	public void update(double diffT, Shape bounds) {}
+	public void update(double diffT, Shape bounds) {
+		/* Update the animation tick */
+		if (!this.isMovingLeft() && !this.isMovingRight()) {
+			// Don't update animation tick as entity is not moving
+			this.clock = 0;
+		} else {
+			// Update animation tick
+			this.clock += diffT;
+
+			// Reached needed ticks to update costume?
+			if (this.clock > this.tickTime) {
+				updateSprite();
+				clock = 0; // Reset clock
+			}
+		}
+	} /* End method update */
 
 
 	/**
@@ -138,17 +159,17 @@ public class Entity {
 	 *
 	 * @param diffT time adjustment between frames.
 	 */
-	public void adjustVelocity(double diffT) {
+	public void adjustVelX(double diffT) {
 		if (this.xAccel > 0) {
 			if (this.xVel < 0.5 && this.xVel > 0) {
 				this.xVel = 0.5;
-			} else if (this.xVel < Settings.P_MAX_SPD) {
+			} else if (this.xVel < this.maxVel) {
 				this.xVel += (diffT*this.xAccel);
 			}
 		} else if (this.xAccel < 0) {
 			if (this.xVel > -0.5 && this.xVel < 0) {
 				this.xVel = -0.5;
-			} else if (this.xVel > -Settings.P_MAX_SPD) {
+			} else if (this.xVel > -this.maxVel) {
 				this.xVel += (diffT*this.xAccel);
 			}
 		} else {
@@ -161,7 +182,19 @@ public class Entity {
 				this.xVel += (diffT*0.1);
 			}
 		}
+	} /* End method adjustVelX */
 
+
+	/**
+	 * Called whenever a "tick" for the entity has passed.
+	 *
+	 * Used for updating costumes and sprites. Should be overrided by
+	 * classes inheriting it.
+	 */
+	public void updateSprite() {}
+
+
+	public void adjustVelY(double diffT) {
 		this.yVel += (diffT*this.yAccel);
 	} /* End method adjustVelocity */
 
@@ -230,6 +263,7 @@ public class Entity {
 					this.bounds.x -= xInc;
 
 					xReachedLim = true;
+					this.right = !this.right;
 				}
 			}
 			// Boundary not reached; requested y distance not reached
@@ -249,8 +283,8 @@ public class Entity {
 						if (this.jumpCnt > 0) {
 							this.jumpCnt--;
 						}
-						this.yVel = 0;
 					}
+					this.yVel = 0;
 				}
 			}
 			cnt++; // Increment movement
@@ -334,7 +368,7 @@ public class Entity {
 	 */
 	public synchronized void jump(double vel) {
 		if (jumpCnt < jumpLimit) {
-			this.yVel = vel;
+			this.setVelY(vel);
 			jumpCnt++;
 		}
 	} /* End method jump */

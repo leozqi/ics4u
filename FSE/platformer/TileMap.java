@@ -19,8 +19,15 @@ enum Biome {
 }
 
 enum EntityType {
-	NONE,
-	PLAYER
+	NONE(0),
+	PLAYER(5),
+	SLIME(1);
+
+	public final int hp;
+
+	private EntityType(int hp) {
+		this.hp = hp;
+	} /* End constructor */
 }
 
 public class TileMap {
@@ -101,6 +108,8 @@ public class TileMap {
 		switch (c) {
 		case 'P': // Player
 			return new TileMap(EntityType.PLAYER);
+		case 'S': // Slime
+			return new TileMap(EntityType.SLIME);
 		case 'b': // BLOCK
 			return new TileMap(3, 0);
 		case 'B': // BLOCK_BORDER_EMPTY

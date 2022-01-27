@@ -27,16 +27,16 @@ public class SpriteHandler {
 
 	private int rows;
 	private int cols;
+	private double zoom = 1;
 
 	private Rectangle2D.Double[][] tileBounds;
 
 
 	public SpriteHandler(
 		BufferedImage sheet, int xPixels, int yPixels,
-		int tileX, int tileY, int xOffset, int yOffset
+		int tileX, int tileY, int xOffset, int yOffset, double zoom
 	) {
 		this.sheet = sheet;
-		this.reversed = Utilities.horizontalFlip(sheet);
 		this.xPixels = xPixels;
 		this.yPixels = yPixels;
 
@@ -50,7 +50,17 @@ public class SpriteHandler {
 		this.rows = this.sheet.getHeight() / (this.tileY + this.yOffset);
 
 		this.tileBounds = new Rectangle2D.Double[rows][cols];
+		this.zoom = zoom;
 
+		if (this.zoom != 1) {
+			this.sheet = Utilities.resize(
+				this.sheet,
+				(int)(this.sheet.getWidth() * this.zoom),
+				(int)(this.sheet.getHeight() * this.zoom)
+			);
+		}
+		this.reversed = Utilities.horizontalFlip(
+			Utilities.copy(this.sheet));
 		createExactBoundaries(rows, cols);
 	} /* End constructor */
 
@@ -65,14 +75,16 @@ public class SpriteHandler {
 
 
 	public SpriteHandler(
-		BufferedImage sheet, int xPixels, int yPixels, int tileX, int tileY
+		BufferedImage sheet, int xPixels, int yPixels,
+		int tileX, int tileY, double zoom
 	) {
-		this(sheet, xPixels, yPixels, tileX, tileY, 0, 0);
+		this(sheet, xPixels, yPixels, tileX, tileY, 0, 0, zoom);
 	} /* End constructor */
 
 
 	public static SpriteHandler createFromFile(
-		Object caller, String relPath, int tileX, int tileY, int xOffset, int yOffset
+		Object caller, String relPath, int tileX, int tileY,
+		int xOffset, int yOffset, double zoom
 	) {
 		BufferedImage img = null;
 		URL url = caller.getClass().getResource(relPath);
@@ -88,7 +100,7 @@ public class SpriteHandler {
 		}
 		return new SpriteHandler(
 			img, img.getWidth(), img.getHeight(),
-			tileX, tileY, xOffset, yOffset
+			tileX, tileY, xOffset, yOffset, zoom
 		);
 	} /* End static method createFromFile */
 
@@ -109,9 +121,10 @@ public class SpriteHandler {
 		}
 
 		return this.sheet.getSubimage(
-			(this.tileX + this.xOffset) * gridX, // x
-			(this.tileY + this.yOffset) * gridY, // y
-			this.tileX, this.tileY
+			(int)(((this.tileX + this.xOffset) * gridX) * this.zoom), // x
+			(int)(((this.tileY + this.yOffset) * gridY) * this.zoom), // y
+			(int)(this.tileX * this.zoom),
+			(int)(this.tileY * this.zoom)
 		);
 	} /* End method getTile */
 
@@ -122,17 +135,17 @@ public class SpriteHandler {
 				"SpriteHandler.getReversedTile -> Inputs cannot be negative."
 			);
 		}
-
 		return this.reversed.getSubimage(
-			(gridX * this.tileX) + (gridX * this.xOffset),
-			(gridY * this.tileY) + (gridY * this.yOffset),
-			this.tileX, this.tileY
+			(int)(((this.tileX + this.xOffset) * gridX) * this.zoom),
+			(int)(((this.tileY + this.yOffset) * gridY) * this.zoom),
+			(int)(this.tileX * this.zoom),
+			(int)(this.tileY * this.zoom)
 		);
 	} /* End method getReversedTile */
 
 
-	public int getXSize() { return this.tileX; }
-	public int getYSize() { return this.tileY; }
+	public int getXSize() { return (int)(this.tileX * this.zoom); }
+	public int getYSize() { return (int)(this.tileY * this.zoom); }
 
 	public Rectangle2D.Double getBounds(int x, int y) { return tileBounds[y][x]; } 
 

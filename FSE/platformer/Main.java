@@ -31,14 +31,14 @@ class Frame extends JFrame {
 		/* Set common options */
 		this.setTitle("test!"); // Title is a defined constant
 		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		this.setResizable(false);
 		this.setVisible(true);
 		this.setLocationRelativeTo(null);
 
 		/* Create a Game object to start the game */
-		this.add(new Game());
+		this.add(new Game(this));
 		this.pack();
 	} /* End default constructor */
+
 } /* End class Frame */
 
 
@@ -68,4 +68,5 @@ public class Main {
 		// Create the game frame to start!
 		Frame f = new Frame();
 	} /* End method run */
+
 } /* End class Main */

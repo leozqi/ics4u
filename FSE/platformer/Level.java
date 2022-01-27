@@ -42,11 +42,15 @@ public class Level {
 
 	// Starting coordinates of player
 	private Point2D.Double pCoords = new Point2D.Double(0, 0);
+	// Starting coordinates / descriptors of enemies
+	private ArrayList<Enemy> enemies = new ArrayList<Enemy>();
 
 	private Area bounds = new Area();            // Store normal bounds
 	private SpecBounds boxes = new SpecBounds(); // Store special boxes
 	private SpriteHandler tiles;                 // Store tile images
+	private SpriteHandler[] entityCostumes;
 	private Biome biome;
+	private double zoom;
 
 	/**
 	 * The Level class holds the data for one level.
@@ -57,9 +61,14 @@ public class Level {
 	 * @param tiles SpriteHandler holding image tiles.
 	 * @param biome Biome code of the level.
 	 */
-	public Level(SpriteHandler tiles, Biome biome) {
+	public Level(
+		SpriteHandler tiles, SpriteHandler[] enemies, Biome biome,
+		double zoom
+	) {
 		this.tiles = tiles;
 		this.biome = biome;
+		this.entityCostumes = enemies;
+		this.zoom = zoom;
 	} /* End constructor */
 
 
@@ -147,13 +156,13 @@ public class Level {
 		if (this.map == null) { return; } // level is not loaded, exit
 
 		synchronized(this.map) {
+			int x = (int)(0 + (col * Settings.UNIT) * this.zoom);
+			int y = (int)(0 + (row * Settings.UNIT) * this.zoom);
 			if ((!type.isPassable()) || type.isItemBox()) {
 				// Get exact boundaries of tile
 				// The function strips all transparent space.
 				Area tmp = Utilities.exactBounds(
-					type.getTile(this.tiles),
-					0 + (col * Settings.internUnit),
-					0 + (row * Settings.internUnit)
+					type.getTile(this.tiles), x, y
 				);
 
 				if (!type.isPassable()) {
@@ -167,10 +176,15 @@ public class Level {
 			EntityType entityType = type.getEntityType();
 			switch (entityType) {
 			case PLAYER:
-				this.pCoords = new Point2D.Double(
-					0 + (col * Settings.internUnit),
-					0 + (row * Settings.internUnit)
-				);
+				this.pCoords = new Point2D.Double(x, y);
+				return;
+			case SLIME:
+				this.enemies.add(new Enemy(
+					EntityType.SLIME,
+					x, y,
+					this.entityCostumes[0],
+					null
+				));
 				return;
 			}
 
@@ -244,8 +258,8 @@ public class Level {
 	 * @param th SpriteHandler to generate the level.
 	 * @return BufferedImage representation of whole level.
 	 */
-	public BufferedImage getLevel(SpriteHandler th) {
-		int u = Settings.internUnit; // Dimensions for one tile
+	public BufferedImage getLevel(SpriteHandler th, double zoom) {
+		int u = (int)(Settings.UNIT*zoom); // Dimensions for one tile
 		int xDim = this.cols * u;    // x-width of the whole image
 		int yDim = this.rows * u;    // y-width of the whole image
 
@@ -293,5 +307,7 @@ public class Level {
 
 
 	public Point2D.Double getPlayerStart() { return this.pCoords; }
+
+	public ArrayList<Enemy> getEnemies() { return this.enemies; }
 
 } /* End class Level */

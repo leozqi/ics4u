@@ -27,10 +27,12 @@ public class Game extends JPanel implements ActionListener {
 	SpriteHandler tileHandle = null;  // tileset
 	SpriteHandler handleP1 = null;    // animations for player one
 	SpriteHandler handleItems = null; // tileset for items
+	SpriteHandler[] handleEnemies = new SpriteHandler[5]; // animations collection for enemies
 
 	/* Level management */
 	Level lvl = null;
 	ArrayList<Item> items = new ArrayList<Item>();
+	ArrayList<Enemy> enemies = new ArrayList<Enemy>();
 
 	/* Initial loading screen */
 	JPanel menu;
@@ -44,15 +46,37 @@ public class Game extends JPanel implements ActionListener {
 	Player player = null;
 	Renderer renderer;
 
-	public Game() {
+	Frame frame;
+
+	public Game(Frame frame) {
+		/* Frame / window */
+		this.frame = frame; // Keep a copy of the JFrame to adjust size
+		this.frame.setResizable(true); // Resizable until level is loaded
+		this.frame.addComponentListener(new ResizeListener());
+
 		/* Set JPanel settings */
-		this.setPreferredSize(new Dimension(Settings.resX, Settings.resY));
+		this.setPreferredSize(new Dimension(Settings.resX(), Settings.resY()));
 		this.setFocusable(true);
 
 		this.menu = this.buildMenu();
 		this.menu.setVisible(true);
 		this.add(this.menu);
 	} /* End constructor */
+
+
+	class ResizeListener extends ComponentAdapter {
+
+		@Override
+		public void componentResized(ComponentEvent componentEvent) {
+			Settings.get().setResX(Game.this.frame.getWidth());
+			Settings.get().setResY(Game.this.frame.getHeight());
+			Game.this.setPreferredSize(new Dimension(
+				Settings.resX(),
+				Settings.resY()
+			));
+		}
+
+	}
 
 
 	/**
@@ -164,8 +188,9 @@ public class Game extends JPanel implements ActionListener {
 		// Load background tiles
 		this.tileHandle = SpriteHandler.createFromFile(
 			this, "/resources/tiles.png",
-			Settings.internUnit, Settings.internUnit,
-			Settings.internSep, Settings.internSep
+			Settings.UNIT, Settings.UNIT,
+			Settings.internSep, Settings.internSep,
+			Settings.zoom()
 		);
 		if (this.tileHandle == null) { return false; }
 
@@ -173,17 +198,28 @@ public class Game extends JPanel implements ActionListener {
 		this.handleP1 = SpriteHandler.createFromFile(
 			this, "/resources/p1.png",
 			Settings.P_WIDTH, Settings.P_HEIGHT,
-			Settings.P_SPACE, Settings.P_SPACE
+			Settings.P_SPACE, Settings.P_SPACE,
+			Settings.zoom()
 		);
 		if (this.handleP1 == null) { return false; }
 
 		// Load item resources
 		this.handleItems = SpriteHandler.createFromFile(
 			this, "/resources/items.png",
-			Settings.internUnit, Settings.internUnit,
-			Settings.defaultSep, Settings.defaultSep
+			Settings.UNIT, Settings.UNIT,
+			Settings.defaultSep, Settings.defaultSep,
+			Settings.zoom()
 		);
 		if (this.handleItems == null) { return false; }
+
+		// Load slimes
+		this.handleEnemies[0] = SpriteHandler.createFromFile(
+			this, "/resources/slime.png",
+			Settings.SLIME_WIDTH, Settings.SLIME_HEIGHT,
+			Settings.defaultSep, Settings.defaultSep,
+			Settings.zoom()
+		);
+		if (this.handleEnemies[0] == null) { return false; }
 
 		return true;
 	} /* End method loadGraphics */
@@ -207,7 +243,7 @@ public class Game extends JPanel implements ActionListener {
 		if (this.tileHandle == null) { return false; } // pics not loaded
 
 		// We only keep track of one level at a time.
-		this.lvl = new Level(this.tileHandle, biome);
+		this.lvl = new Level(this.tileHandle, this.handleEnemies, biome, Settings.zoom());
 
 		if (!this.lvl.loadFile("/resources/" + path)) {
 			return false;
@@ -271,10 +307,16 @@ public class Game extends JPanel implements ActionListener {
 		this.player = new Player(
 			"Bob",
 			5, handleP1,
-			new Rectangle2D.Double(pSpawn.getX(), pSpawn.getY(), 33, 46), null
+			new Rectangle2D.Double(
+				pSpawn.getX(),
+				pSpawn.getY(),
+				Settings.PLAYER_WIDTH * Settings.zoom(),
+				Settings.PLAYER_HEIGHT * Settings.zoom()), null
 		);
 
-		this.cam = new Camera(this.lvl.getLevel(this.tileHandle), 1);
+		this.enemies = this.lvl.getEnemies();
+
+		this.cam = new Camera(this.lvl.getLevel(this.tileHandle, Settings.zoom()));
 
 		this.menu.setVisible(false);
 
@@ -355,11 +397,20 @@ public class Game extends JPanel implements ActionListener {
 	 */
 	public void update(double diffT) {
 		if (!this.running) { return; }
-		player.update(diffT, this.lvl.getBounds());
+		Shape bounds = this.lvl.getBounds();
+		player.update(diffT, bounds);
 
 		checkHittingBox();
 		checkHittingItem();
+		updateEnemies(diffT, bounds);
 	} /* End method update */
+
+
+	public void updateEnemies(double diffT, Shape bounds) {
+		for (int i = 0; i < this.enemies.size(); i++) {
+			this.enemies.get(i).update(diffT, bounds);
+		}
+	} /* End method updateEnemies */
 
 
 	public void checkHittingItem() {
@@ -409,7 +460,7 @@ public class Game extends JPanel implements ActionListener {
 		// Create item from location
 		items.add(new Item(
 			bounds.getX(),
-			bounds.getY()-Settings.internUnit,
+			bounds.getY()-(Settings.UNIT*Settings.zoom()),
 			handleItems, ItemType.HEALTH
 		));
 	} /* End method checkHittingBox */
@@ -427,7 +478,7 @@ public class Game extends JPanel implements ActionListener {
 
 		if (this.running) {
 			Graphics2D g2d = (Graphics2D)g;
-			cam.beam(g2d, player, items);
+			cam.beam(g2d, player, items, enemies, Settings.zoom());
 		}
 	} /* End method paint */
 
