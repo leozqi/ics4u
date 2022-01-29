@@ -30,6 +30,7 @@ public class Player extends Entity implements KeyListener {
 		Attribute[] attrs
 	) {
 		super(hp, sh, bounds, attrs);
+		super.applyAttribute(Attribute.LIGHTING);
 	} /* End constructor */
 
 

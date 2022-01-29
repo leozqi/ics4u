@@ -1,29 +1,25 @@
 // ------------------------------------------------------------------------- //
-// The Flag class represents the endgame goal for a level.                   //
+// The Torch class represents a flickering torch which provides a light      //
+// effect in "dark" biomes.                                                  //
 //                                                                           //
 // Package:  platformer                                                      //
-// Filename: Flag.java                                                       //
+// Filename: Torch.java                                                      //
 // Author:   Leo Qi                                                          //
 // Class:    ICS4U St. Denis                                                 //
 // Date due: Jan. 30, 2022.                                                  //
 // ------------------------------------------------------------------------- //
-
 
 package platformer;
 
 import java.awt.image.BufferedImage;
 import java.awt.geom.Rectangle2D;
 
-public class Flag extends Entity {
+public class Torch extends Entity {
 
 	/**
-	 * Represents one consumable item that the player can take.
-	 * 
-	 * Items come in the form of coins for score and diamonds for effects.
-	 * The sprite of an item and the type are both convienently indicated by
-	 * the ItemType class.
+	 * Represents a flickering light source.
 	 */
-	public Flag(double x, double y, SpriteHandler costumes) {
+	public Torch(double x, double y, SpriteHandler costumes) {
 		super( // Use the constructor of base Entity for most setup
 			0,              // Health points (none since it is item)
 			costumes,       // SpriteHandler for costumes
@@ -36,6 +32,7 @@ public class Flag extends Entity {
 			(Rectangle2D) costumes.getBounds(0, 0).clone(),
 			null // No attributes
 		);
+		super.applyAttribute(Attribute.LIGHTING);
 
 		this.setX(x); // Set X and Y of bounds
 		this.setY(y);
@@ -44,8 +41,7 @@ public class Flag extends Entity {
 
 	@Override
 	public void updateTick() {
-		/* Update sprite count (animation step) */
-		if (spriteCnt > 0) {
+		if (spriteCnt > 1) {
 			spriteCnt = 0;
 		} else {
 			spriteCnt++;
@@ -54,9 +50,7 @@ public class Flag extends Entity {
 
 
 	/**
-	 * Get image representation of item.
-	 *
-	 * For items, simply look like the object to get.
+	 * Get image representation of torch.
 	 */
 	@Override
 	public BufferedImage getSprite() {

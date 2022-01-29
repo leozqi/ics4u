@@ -278,6 +278,11 @@ public class Level {
 				this.entityCostumes[0], null
 			));
 			break;
+		case TORCH:
+			this.entities.add(new Torch(
+				x, y, this.entityCostumes[3]
+			));
+			break;
 		case B_COIN:
 			this.entities.add(new Item(
 				x, y,

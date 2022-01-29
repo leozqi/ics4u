@@ -16,6 +16,7 @@ public enum Attribute {
 
 	/* Entity Attributes */
 		DOUBLE_JUMP, // Apply double jump
+		LIGHTING,    // Entity gives off light
 		COIN_1,      // Give one coin
 		COIN_10,     // Give ten coins
 		COIN_100,    // Give one hundred coins

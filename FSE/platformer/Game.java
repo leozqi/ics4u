@@ -42,7 +42,8 @@ public class Game extends JPanel implements ActionListener {
 	// [0]: Slimes
 	// [1]: Endgame flag
 	// [2]: Items
-	SpriteHandler[] handleEntities = new SpriteHandler[3];
+	// [3]: Torches
+	SpriteHandler[] handleEntities = new SpriteHandler[4];
 
 	Level lvl = null; // Stores a level loaded into the game
 	ArrayList<Entity> entities = new ArrayList<Entity>();
@@ -58,11 +59,6 @@ public class Game extends JPanel implements ActionListener {
 	boolean endSequence = false;
 	Player player = null;
 	Renderer renderer;
-
-	private RenderingHints rh = new RenderingHints(
-		RenderingHints.KEY_TEXT_ANTIALIASING,
-		RenderingHints.VALUE_TEXT_ANTIALIAS_ON
-	);
 
 	Frame frame;
 
@@ -227,6 +223,13 @@ public class Game extends JPanel implements ActionListener {
 			Settings.UNIT, Settings.UNIT, Settings.zoom()
 		);
 		if (this.handleEntities[2] == null) { return false; }
+
+		// Load torches
+		this.handleEntities[3] = SpriteHandler.createFromFile(
+			this, "/resources/torch.png",
+			Settings.UNIT, Settings.UNIT, Settings.zoom()
+		);
+		if (this.handleEntities[3] == null) { return false; }
 
 		return true;
 	} /* End method loadGraphics */
@@ -520,12 +523,24 @@ public class Game extends JPanel implements ActionListener {
 	@Override
 	public void paint(Graphics g) {
 		super.paint(g);
+		// No need to paint if game is not running
+		if (!this.running) { return; }
 
-		if (!this.running) { return; } // No need to paint; Game is not
-		                               // running.
+		Graphics2D g2d = (Graphics2D) g;
 
-		Graphics2D g2d = (Graphics2D)g;
-		cam.beam(g2d, player, entities, Settings.zoom());
+		boolean darken = false;
+		if ((this.lvl.getBiome() == Biome.ROCKY) && (!endSequence)) {
+			// Darken the level only if the biome is underground
+			// and the level sequence has not ended.
+
+			// If the level has ended, let the player see the whole
+			// level
+			darken = true;
+		}
+
+		// Display level and entities
+		cam.beam(g2d, player, entities, Settings.zoom(), darken);
+
 		if (endSequence) {
 			if (this.player.isAlive()) {
 				cam.showMsg(g2d, this.font.deriveFont(80f), "Victory!");

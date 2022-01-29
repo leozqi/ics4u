@@ -137,6 +137,8 @@ public class TileMap {
 				return new TileMap(EntityType.S_COIN);
 			case '$': // Gold coin
 				return new TileMap(EntityType.G_COIN);
+			case 'T': // Torch
+				return new TileMap(EntityType.TORCH);
 		/* SPECIAL EFFECTS */
 			case 'x': // BOX
 				return new TileMap(0, 0);
@@ -194,10 +196,6 @@ public class TileMap {
 				return new TileMap(16, 0,
 					Attribute.PASSABLE
 				);
-			case 'T': // TORCH
-				return new TileMap(17, 0, Attribute.PASSABLE);
-			case 'I': // TORCH_OUT
-				return new TileMap(19, 0, Attribute.PASSABLE);
 			case '_': // WINDOW
 				return new TileMap(20, 0, Attribute.PASSABLE);
 		/* BLOCK ELEMENTS */

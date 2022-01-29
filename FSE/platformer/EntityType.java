@@ -16,10 +16,12 @@ public enum EntityType {
 	PLAYER(5),  // Player
 	SLIME(1),   // Slime (moving ground enemy)
 
-	B_COIN(0, Attribute.COIN_1),
-	S_COIN(1, Attribute.COIN_10),
-	G_COIN(2, Attribute.COIN_100),
-	HEALTH(5, Attribute.HP_1);
+	B_COIN(0, Attribute.COIN_1),   // Bronze coin
+	S_COIN(1, Attribute.COIN_10),  // Silver coin
+	G_COIN(2, Attribute.COIN_100), // Gold coin
+	HEALTH(5, Attribute.HP_1),     // Health
+
+	TORCH(Attribute.LIGHTING); // Torch
 
 	public final int hp;
 	public final int spriteNum;
@@ -42,5 +44,12 @@ public enum EntityType {
 		this.spriteNum = spriteNum;
 		this.attr = attr;
 	} /* End constructor */
+
+
+	private EntityType(Attribute attr) {
+		this.hp = 0;
+		this.spriteNum = 0;
+		this.attr = attr;
+	} /* End constructor (attr) */
 
 } /* End class EntityType */

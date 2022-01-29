@@ -129,11 +129,9 @@ public class Settings {
 		synchronized(this) { this.levelHeight = height; }
 	} /* End method setZoom */
 
-
+	/* Game units */
 	public static final int UNIT = 35; // Tile size at 1x zoom
 	public static final int SEP = 0;   // Separator between tiles in spritesheet
-	public static final int internSep = 1;
-	public static final int defaultSep = 0;
 
 	public static final double FRAMES_SEC = 120d;
 	public static final double NANOS = 1000000000d / FRAMES_SEC;
@@ -154,7 +152,7 @@ public class Settings {
 	public static final String FILE_EXT = "lvl";
 
 	public static final Color COLOUR_SKY = new Color(208, 244, 247, 255);
-	public static final Color COLOUR_ROCK = new Color(131, 148, 148);
+	public static final Color COLOUR_ROCK = new Color(152, 152, 152);
 	public static final Color COLOUR_TITLE = new Color(120, 50, 150);
 
 	public static final int SLIME_WIDTH = 26;

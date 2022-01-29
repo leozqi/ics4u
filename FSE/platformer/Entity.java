@@ -25,6 +25,7 @@ public class Entity {
 	boolean alive = true; // Whether entitiy is alive or not
 	int hp;       // Health points of the entity
 	int coin = 0; // Coins of the entity
+	ArrayList<Attribute> attrs = new ArrayList<Attribute>();
 
 	// DelayQueue for effects
 	// The current effect is the element at head that is being peeked
@@ -130,6 +131,8 @@ public class Entity {
 		case HP_1:        // Add one HP to Entity
 			hp += 1;
 			break;
+		default:
+			this.attrs.add(attr);
 		}
 	} /* End method applyAttribute */
 
@@ -424,6 +427,7 @@ public class Entity {
 	 * directions.
 	 */
 	public Rectangle2D.Double getBounds() { return this.bounds;       }
+	public ArrayList<Attribute> getAttributes() { return this.attrs;  }
 	public boolean isMovingLeft()         { return (this.xAccel < 0); }
 	public boolean isMovingRight()        { return (this.xAccel > 0); }
 	public boolean isMovingUp()           { return (this.yAccel < 0); }
