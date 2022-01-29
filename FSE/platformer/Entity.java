@@ -1,9 +1,12 @@
 // ------------------------------------------------------------------------- //
-// Represents a game entity.                                                 //
+// The Entity class stores base functionality for moving, animated sprites   //
+// displayed in levels including the player.                                 //
 //                                                                           //
-// Author:      Leo Qi                                                       //
-// Start date:  2022-01-10                                                   //
-// Finish date: 2022-01-20                                                   //
+// Package:  platformer                                                      //
+// Filename: Entity.java                                                     //
+// Author:   Leo Qi                                                          //
+// Class:    ICS4U St. Denis                                                 //
+// Date due: Jan. 30, 2022.                                                  //
 // ------------------------------------------------------------------------- //
 
 package platformer;
@@ -11,21 +14,16 @@ package platformer;
 import java.awt.*;
 import java.awt.geom.*;
 import java.awt.geom.Point2D;
-import java.awt.geom.Point2D.Double;
 import java.awt.image.BufferedImage;
-
 import java.util.ArrayList;
 import java.util.concurrent.*;
 
 public class Entity {
 
-	/* Identifiers */
-	String name; // Name of the entity
-
 	/* Properties */
-	SpriteHandler costumes; // Sprites and image animations for the entity
 	Rectangle2D.Double bounds; // Bounding-box (collision box) for entity
-	int hp; // Health points of the entity
+	boolean alive = true; // Whether entitiy is alive or not
+	int hp;       // Health points of the entity
 	int coin = 0; // Coins of the entity
 
 	// DelayQueue for effects
@@ -34,19 +32,25 @@ public class Entity {
 	DelayQueue<Effect> effects = new DelayQueue<Effect>();
 
 	/* Movement */
-	double xVel = 0; // X velocity of entity
-	double yVel = 0; // Y velocity of entity
-	double xAccel = 0; // X acceleration of entity
+	double xVel   = 0;                  // X velocity of entity
+	double yVel   = 0;                  // Y velocity of entity
+	double xAccel = 0;                  // X acceleration of entity
 	double yAccel = Settings.E_GRAVITY; // Y acceleration of entity
-	int jumpCnt = 0; // Number of times entity has already jumped
-                         // (before hitting the ground)
+	double maxVel = Settings.E_MAX_SPD; // Max velocity
+	double minVel = Settings.E_MIN_SPD; // Min velocity
+
+	int jumpCnt = 0;   // Number of times entity has already jumped
+                           // (before hitting the ground)
 	int jumpLimit = 1; // Limit of jumps before entity cannot jump
-	boolean right = false; // For enemy classes
-	double maxVel = Settings.P_MAX_SPD;
+	boolean right = false; // Horizontal direction of sprite (left or right)
+
+	/* Sprites */
+	SpriteHandler costumes; // Sprite animations for the entity
+	int spriteCnt;          // Current costume of sprite
+
+	/* Time */
 	double clock = 0d; // Clock for sprite change cycles
 	double tickTime = 10d; // Time to effect one animation cycle
-	int spriteCnt; // current costume of sprite
-	boolean alive = true;
 
 	/**
 	 * Create a new entity.
@@ -56,18 +60,18 @@ public class Entity {
 	 * of Entity, like Player or Item.
 	 */
 	public Entity(
-		String name, int hp, SpriteHandler costumes, Rectangle2D bounds,
+		int hp, SpriteHandler costumes, Rectangle2D bounds,
 		Attribute[] attrs
 	) {
-		this.name = name;
 		this.hp = hp;
 		this.costumes = costumes;
 		this.bounds = (Rectangle2D.Double) bounds;
 
-		// Process each attribute, if there are any
+		// Process any attributes
 		if (attrs == null) { return; }
-		for (int i = 0; i < attrs.length; i++) {
-			applyAttribute(attrs[i]);
+		for (int index = 0; index < attrs.length; index++) {
+			// Loop over attributes and apply attributes
+			this.applyAttribute(attrs[index]);
 		}
 	} /* End constructor */
 
@@ -84,13 +88,20 @@ public class Entity {
 	public void applyStatus(Effect e) { effects.add(e); }
 
 
+	/**
+	 * Set the entity as being "dead".
+	 *
+	 * A dead entity will stop moving except to drop out of the screen.
+	 */
 	public void die() {
-		this.alive = false;
-		this.setAccelX(0);
+		this.alive = false; // "Kill" the entity.
+
+		this.setAccelX(0);  // Stop moving in both axis.
 		this.setVelX(0);
+
 		this.setAccelY(Settings.E_GRAVITY);
 		this.jump(-Settings.P_JUMP);
-	}
+	} /* End method die */
 
 
 	/**
@@ -99,22 +110,24 @@ public class Entity {
 	 * Attributes make it easier to specify base properties of entities
 	 * without making a new class. In effect, they are *effects* applied
 	 * instantly. This is used, for example, with the Item class.
+	 *
+	 * @param attr attribute to apply.
 	 */
-	public void applyAttribute(Attribute a) {
-		switch (a) {
-		case DOUBLE_JUMP:
+	public void applyAttribute(Attribute attr) {
+		switch (attr) {
+		case DOUBLE_JUMP: // Entity may double-jump
 			jumpLimit = 2;
 			break;
-		case COIN_1:
+		case COIN_1:      // Add one coin to Entity counter
 			coin++;
 			break;
-		case COIN_10:
+		case COIN_10:     // Add ten coins to Entity counter
 			coin += 10;
 			break;
-		case COIN_100:
+		case COIN_100:    // Add one hundred coins to Entity
 			coin += 100;
 			break;
-		case HP_1:
+		case HP_1:        // Add one HP to Entity
 			hp += 1;
 			break;
 		}
@@ -149,39 +162,57 @@ public class Entity {
 
 			// Reached needed ticks to update costume?
 			if (this.clock > this.tickTime) {
-				updateTick();
+				updateTick(); // Per-tick constant time update.
 				clock = 0; // Reset clock
 			}
 		}
+
+		/* Check for death */
+		this.checkDeath();
 	} /* End method update */
 
 
 	/**
 	 * Adjusts velocity based on acceleration for the X axis.
 	 *
+	 * Adds horizontal "friction" to reduce X velocity gradually, and
+	 * applies a max X velocity.
+	 *
 	 * @param diffT time adjustment between frames.
 	 */
 	public void adjustVelX(double diffT) {
+		// Positive X acceleration
 		if (this.xAccel > 0) {
-			if (this.xVel < 0.5 && this.xVel > 0) {
-				this.xVel = 0.5;
+			// If x-velocity is too low to be measurable,
+			// set it equal to MIN_SPD
+			if (this.xVel < this.minVel && this.xVel > 0) {
+				this.xVel = this.minVel;
+
+			// If x-velocity is too high
 			} else if (this.xVel < this.maxVel) {
-				this.xVel += (diffT*this.xAccel);
+				this.xVel += (diffT * this.xAccel);
 			}
+		// Negative X acceleration
 		} else if (this.xAccel < 0) {
-			if (this.xVel > -0.5 && this.xVel < 0) {
-				this.xVel = -0.5;
+			// Set very small velocities equal to MIN_SPD
+			if (this.xVel > -this.minVel && this.xVel < 0) {
+				this.xVel = -this.minVel;
+
+			// If x-velocity is too high
 			} else if (this.xVel > -this.maxVel) {
-				this.xVel += (diffT*this.xAccel);
+				this.xVel += (diffT * this.xAccel);
 			}
+		// No acceleration; use friction
 		} else {
-			if (Math.abs(this.xVel) < 0.5) {
+			// Less than minVel; friction should stop x-velocity.
+			if (Math.abs(this.xVel) < this.minVel) {
 				this.xVel = 0;
 			}
+			// Apply friction
 			if (this.xVel > 0) {
-				this.xVel -= (diffT*0.1);
+				this.xVel -= (diffT * 0.1);
 			} else if (this.xVel < 0) {
-				this.xVel += (diffT*0.1);
+				this.xVel += (diffT * 0.1);
 			}
 		}
 	} /* End method adjustVelX */
@@ -200,8 +231,15 @@ public class Entity {
 	public void updateTick() {}
 
 
+	/**
+	 * Adjusts velocity based on acceleration for the Y axis.
+	 *
+	 * Applies gravity to y velocity with time adjustment.
+	 *
+	 * @param diffT time adjustment between frames.
+	 */
 	public void adjustVelY(double diffT) {
-		this.yVel += ((diffT*this.yAccel)/Settings.zoom());
+		this.yVel += ( (diffT * this.yAccel) );
 	} /* End method adjustVelY */
 
 
@@ -221,10 +259,10 @@ public class Entity {
 	public void move(double x, double y) {
 		synchronized (this.bounds) {
 			this.bounds.setRect(
-				this.bounds.getX() + x,
-				this.bounds.getY() + y,
-				this.bounds.getWidth(),
-				this.bounds.getHeight()
+				this.bounds.getX() + x, // Set X Pos
+				this.bounds.getY() + y, // Set Y Pos
+				this.bounds.getWidth(), // Set X width
+				this.bounds.getHeight() // Set Y height
 			);
 		}
 	} /* End method move */
@@ -236,16 +274,17 @@ public class Entity {
 	 * Bounds can be any costumesape, but for this program is the Area class:
 	 *     java.awt.geom.Area.
 	 *
-	 * It works by gradually moving the entity one coordinate in the x and
+	 * Works by gradually moving the entity one coordinate in the x and
 	 * y directions at a time until one of those dimensions hits a bound
 	 * or the specified distance has been covered.
 	 *
 	 * Then, it continues moving one coordinate in the other direction until
-	 * it too hits a bound.
+	 * it too hits a bound. This method takes into account horizontal
+	 * boundaries of the level as "walls". Passing the lower vertical bound
+	 * of the level (max Y) will mark the entity as being "dead" for collection.
 	 *
-	 * This method is inefficient, but is the simplest method of collision
-	 * detection *and* is more efficient than checking MANY costumesapes (i.e.
-	 * each tile) individually.
+	 * This method is the simplest method of collision detection *and* is
+	 * more efficient than checking MANY Shapes (or each tile) individually.
 	 */
 	public void boundedMove(double x, double y, Shape bounds) {
 		boolean xReachedLim = false; // hit boundary in X dimension
@@ -263,12 +302,21 @@ public class Entity {
 				this.bounds.x += xInc;
 
 				// Check for collision
-				if (bounds.intersects(this.bounds)) {
+				if (
+					(bounds.intersects(this.bounds))
+					|| (this.bounds.getMinX() < 0) // X bounds:
+					|| (this.bounds.getMaxX() > Settings.levelWidth())
+				) {
 					// Go back so object is *almost*
 					// colliding, but not actually
 					this.bounds.x -= xInc;
 
+					// Have reached x limit; stop incrementing
+					// on next loop
 					xReachedLim = true;
+
+					// Entity should now be moving in the
+					// opposite direction.
 					this.right = !this.right;
 				}
 			}
@@ -308,6 +356,21 @@ public class Entity {
 
 
 	/**
+	 * Check if the entity should be "dead".
+	 *
+	 * Dead entities are marked to be removed at a specified point in the
+	 * main game loop.
+	 */
+	public void checkDeath() {
+		/* Death due to falling out of the world */
+		if (this.bounds.getMinY() > Settings.levelHeight()) {
+			this.die();
+			return;
+		}
+	} /* End method checkDeath */
+
+
+	/**
 	 * Return the sprite of the current animation step.
 	 *
 	 * Classes inheriting the Entity class costumesould change this to a different
@@ -331,25 +394,19 @@ public class Entity {
 	 * Conveinence method to get centre x of entity; all it does is call
 	 * Utilities.midpoint with the entity's coordinates and width.
 	 */ 
-	public int getCentreX() {
-		return (int) Utilities.midpoint(
-			this.bounds.getX(), this.bounds.getWidth()
-		);
-	} /* End method getCentreX */
+	public int getCentreX() { return (int) this.bounds.getCenterX(); }
 
 
 	/**
 	 * Return centre y position of the sprite.
 	 */
-	public int getCentreY() {
-		return (int) Utilities.midpoint(
-			this.bounds.getY(), this.bounds.getHeight()
-		);
-	} /* End method getCentreY */
+	public int getCentreY() { return (int) this.bounds.getCenterY(); }
 
 
 	/**
 	 * Set the acceleration and velocities of the entity manually.
+	 *
+	 * Used for an Entity with constant velocity or acceleration.
 	 */
 	public synchronized void setAccelX(double accel) { this.xAccel = accel; }
 	public synchronized void setAccelY(double accel) { this.yAccel = accel; }
@@ -359,27 +416,41 @@ public class Entity {
 	public synchronized void setY(double y) { this.bounds.y = y; }
 
 
-	public Rectangle2D.Double getBounds() { return this.bounds; }
-	public boolean isMovingLeft() { return (this.xAccel < 0); }
-	public boolean isMovingRight() { return (this.xAccel > 0); }
-	public boolean isMovingUp() { return (this.yAccel < 0); }
-	public boolean isMovingDown() { return (this.yAccel > 0); }
-	public boolean isTouchingGround() { return (this.yVel == 0); }
+	/**
+	 * Status indicators.
+	 *
+	 * Directions are based on acceleration. Some Entities do not use
+	 * acceleration but modify the acceleration variable to give accurate
+	 * directions.
+	 */
+	public Rectangle2D.Double getBounds() { return this.bounds;       }
+	public boolean isMovingLeft()         { return (this.xAccel < 0); }
+	public boolean isMovingRight()        { return (this.xAccel > 0); }
+	public boolean isMovingUp()           { return (this.yAccel < 0); }
+	public boolean isMovingDown()         { return (this.yAccel > 0); }
+	public boolean isTouchingGround()     { return (this.yVel == 0);  }
+	public boolean isAlive()              { return this.alive;        }
 
 	/**
 	 * Jump with a starting velocity of `vel`.
 	 *
-	 * This method will consume one "jump". Players can be configured to
+	 * This method will consume one "jump." Players can be configured to
 	 * have more than one "jump" before landing.
 	 */
 	public synchronized void jump(double vel) {
+		// Allow jumping if jumpLImit has not been reached
 		if (jumpCnt < jumpLimit) {
 			this.setVelY(vel);
-			jumpCnt++;
+			jumpCnt++; // Increment jump count
 		}
 	} /* End method jump */
 
 
+	/**
+	 * Check if entity touching a rectangle bounds-box.
+	 * 
+	 * @return true if touching, else false.
+	 */
 	public boolean isTouching(Rectangle2D.Double bounds) {
 		if (this.bounds.intersects(bounds)) {
 			return true;

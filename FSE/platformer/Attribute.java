@@ -12,6 +12,8 @@ package platformer;
 
 public enum Attribute {
 
+	NONE,
+
 	/* Entity Attributes */
 		DOUBLE_JUMP, // Apply double jump
 		COIN_1,      // Give one coin

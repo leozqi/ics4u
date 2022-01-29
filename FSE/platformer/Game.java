@@ -1,63 +1,82 @@
 // ------------------------------------------------------------------------- //
-// Controls the input/output of the game (player input and display framerate)//
+// The Game class displays main menus and controls loading and updating of   //
+// levels.                                                                   //
 //                                                                           //
-// Author:      Leo Qi                                                       //
-// Start date:  2021-12-23                                                   //
-// Finish date:                                                              //
+// Package:  platformer                                                      //
+// Filename: Game.java                                                       //
+// Author:   Leo Qi                                                          //
+// Class:    ICS4U St. Denis                                                 //
+// Date due: Jan. 30, 2022.                                                  //
 // ------------------------------------------------------------------------- //
 
 package platformer;
 
 import java.awt.*;
-import java.util.List;
-import java.util.ArrayList;
-import javax.swing.*;
 import java.awt.geom.*;
+import java.awt.geom.Point2D.Double;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
-import java.awt.geom.Point2D.Double;
+import java.util.List;
+import java.util.ArrayList;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import javax.swing.*;
 import java.net.URL;
 import java.io.*;
 
 public class Game extends JPanel implements ActionListener {
 
-	/* SpriteHandlers */
-	SpriteHandler tileHandle = null;  // tileset
-	SpriteHandler handleP1 = null;    // animations for player one
-	SpriteHandler handleItems = null; // tileset for items
-	SpriteHandler[] handleEntities = new SpriteHandler[5]; // animations collection for enemies
+	/**
+	 * SpriteHandlers manage the image resources loaded through different
+	 * image paths.
+	 *
+	 * Each SpriteHandler can retrieve tiles from one spritesheet through
+	 * a specified X and Y grid location on the spritesheet.
+	 *
+	 * Spritesheets are initialized in the `loadGraphics` method.
+	 */
+	SpriteHandler handleTile  = null; // tileset
+	SpriteHandler handleP1    = null; // animations for player one
 
-	/* Level management */
-	Level lvl = null;
-	ArrayList<Item> items = new ArrayList<Item>();
-	ArrayList<Enemy> enemies = new ArrayList<Enemy>();
-	Flag flag;
+	// Collection of SpriteHandlers for entities
+	// [0]: Slimes
+	// [1]: Endgame flag
+	// [2]: Items
+	SpriteHandler[] handleEntities = new SpriteHandler[3];
+
+	Level lvl = null; // Stores a level loaded into the game
+	ArrayList<Entity> entities = new ArrayList<Entity>();
 
 	/* Initial loading screen */
-	Font font;
-	JPanel menu;
-	JSlider zoomSelect;
-	JComboBox<String> levelList;
-	JProgressBar mProgress;
+	Font font;                   // Font used for all text
+	Menu menu;                   // Menu displayed at start
 
 	/* Game */
 	Camera cam = null;
 	boolean running = false;
 	private double clock = 0d;
-	boolean deathSequence = false;
+	boolean endSequence = false;
 	Player player = null;
 	Renderer renderer;
+
+	private RenderingHints rh = new RenderingHints(
+		RenderingHints.KEY_TEXT_ANTIALIASING,
+		RenderingHints.VALUE_TEXT_ANTIALIAS_ON
+	);
 
 	Frame frame;
 
 	public Game(Frame frame) {
-		super(new BorderLayout());
+		super();
 
-		/* Frame / window */
-		this.frame = frame; // Keep a copy of the JFrame to adjust size
-		this.frame.setResizable(true); // Resizable until level is loaded
+		this.setLayout(new BoxLayout(this, BoxLayout.PAGE_AXIS));
+		this.setBackground(Settings.COLOUR_ROCK);
+
+		/* Window management */
+		this.frame = frame; // Keep copy of JFrame for resize functionality
+		this.frame.setResizable(true); // Enable resizing
+
+		// Adjust Camera viewport based on resized window
 		this.frame.addComponentListener(new ResizeListener());
 
 		/* Set JPanel settings */
@@ -69,9 +88,17 @@ public class Game extends JPanel implements ActionListener {
 			this.font = new Font(Font.DIALOG, Font.PLAIN, 18);
 		}
 
-		this.menu = this.buildMenu();
+		this.menu = new Menu(
+			this,
+			"Go Oust!",
+			"Help Oust the alien reach the flag!",
+			this.font,
+			this.getLevelNames()
+		);
 		this.menu.setVisible(true);
-		this.add(this.menu, BorderLayout.CENTER);
+		this.add(Box.createHorizontalGlue());
+		this.add(this.menu);
+		this.add(Box.createHorizontalGlue());
 	} /* End constructor */
 
 
@@ -84,9 +111,7 @@ public class Game extends JPanel implements ActionListener {
 		try {
 			URL url = this.getClass().getResource("/resources/font.ttf");
 
-			if (url == null) {
-				return false;
-			}
+			if (url == null) { return false; }
 
 			this.font = Font.createFont(
 				Font.TRUETYPE_FONT,
@@ -110,160 +135,43 @@ public class Game extends JPanel implements ActionListener {
 				Settings.resX(),
 				Settings.resY()
 			));
+
+			if (!Game.this.running) {
+				repaint();
+			}
 		}
 
 	} /* End class ResizeListener */
 
 
 	/**
-	 * Builds a start menu with Swing components (Radiobuttons, buttons,
-	 * and labels).
+	 * Listen for menu button-actions and action commands to change the
+	 * Game's state.
 	 *
-	 * NOTE: This code's structure was originally from my Pong project.
+	 * The start button of the main menu is tied to this method; pressing
+	 * the start button starts the game via this method.
 	 *
-	 * This start menu is used to select a level from available levels in the
-	 * filesystem.
-	 *
-	 * Documentation used:
-	 *
-	 * Comboboxes:
-	 * <https://docs.oracle.com/javase/tutorial/uiswing/components/combobox.html>
-	 *
-	 * The final menu looks like the below:
-	 * ---------------------------
-	 * |                         |
-	 * |       Alien Bros        |
-	 * |                         |
-	 * |  Pick a level:          |
-	 * |  ---------------------  |
-	 * |  |    Level 1        |  |
-	 * |  ---------------------  |
-	 * |                         |
-	 * |          Start!         |
-	 * |                         |
-	 * ---------------------------
+	 * @param event Event to be processed
 	 */
-	private JPanel buildMenu() {
-		JPanel retMenu = new JPanel();        // Menu to return is in a JPanel
-
-		JLabel mTitle  = new JLabel("Go Oust!"); // Title
-		mTitle.setFont(this.font.deriveFont(80f));
-		mTitle.setForeground(new Color(120, 50, 150));
-		JLabel mDescrip = new JLabel("Pick a level!");
-		mDescrip.setFont(this.font.deriveFont(18f));
-		mProgress = new JProgressBar();
-
-		// Get all levels that can be played
-		levelList = new JComboBox<String>(this.getLevelNames());
-		levelList.setFont(this.font.deriveFont(20f));
-		levelList.setMaximumSize( levelList.getPreferredSize());
-
-		JLabel mSliderDescrip = new JLabel("Select a zoom:");
-		mSliderDescrip.setFont(this.font.deriveFont(18f));
-		zoomSelect = new JSlider(JSlider.HORIZONTAL, 50, 200, 100);
-		zoomSelect.setMajorTickSpacing(50);
-		zoomSelect.setSnapToTicks(true);
-		zoomSelect.setPaintLabels(true);
-		zoomSelect.setPaintTicks(true);
-		zoomSelect.setPaintTrack(true);
-		zoomSelect.setFont(this.font.deriveFont(18f));
-
-		// Start button
-		// Doc used: https://docs.oracle.com/javase/8/docs/api/javax/swing/JButton.html
-		JButton mStart  = new JButton("Start!");
-		mStart.setFont(this.font.deriveFont(50f));
-		// the Game class listens for this ActionCommand to start the game
-		mStart.setActionCommand("start");
-		mStart.addActionListener(this);
-
-		// A Java layout arranges the labels and buttons on the menu.
-		// The Swing GroupLayout is the most flexible and easy to use:
-		// https://docs.oracle.com/javase/tutorial/uiswing/layout/group.html
-		//
-		// The GroupLayout works by arranging elements based on their
-		// specified positions in TWO separate layouts, one vertical
-		// and one horizontal.
-		//
-		// Create a GroupLayout:
-		GroupLayout lay = new GroupLayout(retMenu);
-		retMenu.setLayout(lay);
-
-		lay.setAutoCreateGaps(true);           // Gaps between elements
-		lay.setAutoCreateContainerGaps(true);  // Gaps between containers
-
-		// Order items in parallel horizontally (on top of one another)
-		lay.setHorizontalGroup(
-			lay.createParallelGroup(GroupLayout.Alignment.CENTER)
-			.addComponent(mTitle)     // Title
-			.addGroup(lay.createSequentialGroup()
-				.addComponent(mDescrip)   // Description
-				.addComponent(levelList)  // List of levels
-			)
-			.addGroup(lay.createSequentialGroup()
-				.addComponent(mSliderDescrip)
-				.addComponent(
-					zoomSelect,
-					GroupLayout.PREFERRED_SIZE,
-					GroupLayout.DEFAULT_SIZE,
-					GroupLayout.PREFERRED_SIZE
-				)
-			)
-			.addComponent(mStart)
-			.addComponent(mProgress)  // Progress bar
-		);
-
-		lay.setVerticalGroup(
-			lay.createSequentialGroup()
-			.addPreferredGap(
-				LayoutStyle.ComponentPlacement.RELATED,
-				GroupLayout.DEFAULT_SIZE,
-				Short.MAX_VALUE
-			)
-			.addComponent(mTitle)
-			.addPreferredGap(
-				LayoutStyle.ComponentPlacement.RELATED,
-				GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-			.addGroup(lay.createParallelGroup()
-				.addComponent(mDescrip)
-				.addComponent(levelList)
-			)
-			.addPreferredGap(
-				LayoutStyle.ComponentPlacement.RELATED,
-				GroupLayout.DEFAULT_SIZE, 50
-			)
-			.addGroup(lay.createParallelGroup()
-				.addComponent(mSliderDescrip)
-				.addComponent(zoomSelect)
-			)
-			.addPreferredGap(
-				LayoutStyle.ComponentPlacement.RELATED,
-				GroupLayout.DEFAULT_SIZE,
-				Short.MAX_VALUE
-			)
-			.addComponent(mStart)
-			.addComponent(mProgress)
-			.addPreferredGap(
-				LayoutStyle.ComponentPlacement.RELATED,
-				GroupLayout.DEFAULT_SIZE,
-				Short.MAX_VALUE
-			)
-		);
-		return retMenu; // Return the built menu
-	} /* End method buildMenu */
-
-
 	@Override
-	public void actionPerformed(ActionEvent e) {
-		if (e.getActionCommand() == "start") {
-			mProgress.setIndeterminate(true);
-			try {
+	public void actionPerformed(ActionEvent event) {
+		// Not start button; return
+		if (!(event.getActionCommand() == "start")) { return; }
+
+		this.menu.setDescription("Loading . . .");
+
+		try {
+			// Try to load levels and start the game.
+			// Load in the Swing AWT loop to run in the same thread
+			// as the painting methods.
 			SwingUtilities.invokeLater(new Runnable() {
 				public void run() {
-					startGame();
+					startGame(); // Load levels
 				}
 			});
-			} catch (Exception err) {}
-		}
+		} catch (Exception err) {} // If fail, ignore button / command
+
+		this.menu.setDescription("Loading . . .");
 	} /* End method actionPerformed */
 
 
@@ -284,13 +192,13 @@ public class Game extends JPanel implements ActionListener {
 		}
 
 		// Load background tiles
-		this.tileHandle = SpriteHandler.createFromFile(
+		this.handleTile = SpriteHandler.createFromFile(
 			this, tilePath,
 			Settings.UNIT, Settings.UNIT,
 			Settings.SEP, Settings.SEP,
 			Settings.zoom(), true
 		);
-		if (this.tileHandle == null) { return false; }
+		if (this.handleTile == null) { return false; }
 
 		// Load player animations
 		this.handleP1 = SpriteHandler.createFromFile(
@@ -298,13 +206,6 @@ public class Game extends JPanel implements ActionListener {
 			Settings.P_WIDTH, Settings.P_HEIGHT, Settings.zoom()
 		);
 		if (this.handleP1 == null) { return false; }
-
-		// Load item resources
-		this.handleItems = SpriteHandler.createFromFile(
-			this, "/resources/items.png",
-			Settings.UNIT, Settings.UNIT, Settings.zoom()
-		);
-		if (this.handleItems == null) { return false; }
 
 		// Load slimes
 		this.handleEntities[0] = SpriteHandler.createFromFile(
@@ -320,6 +221,13 @@ public class Game extends JPanel implements ActionListener {
 		);
 		if (this.handleEntities[1] == null) { return false; }
 
+		// Load item resources
+		this.handleEntities[2] = SpriteHandler.createFromFile(
+			this, "/resources/items.png",
+			Settings.UNIT, Settings.UNIT, Settings.zoom()
+		);
+		if (this.handleEntities[2] == null) { return false; }
+
 		return true;
 	} /* End method loadGraphics */
 
@@ -327,7 +235,7 @@ public class Game extends JPanel implements ActionListener {
 	/**
 	 * Load level data.
 	 *
-	 * Level data is loaded with the use of the tileHandle sprite source.
+	 * Level data is loaded with the use of the handleTile sprite source.
 	 * When loading level data, all collision boxes are calculated from
 	 * the raw pixels of the tiles and whether or not they are transparent.
 	 *
@@ -338,17 +246,28 @@ public class Game extends JPanel implements ActionListener {
 	 * @param biome the biome / "look" of the level.
 	 * @return true if completed successfully, else false.
 	 */
-	public boolean loadLevel(String path, Biome biome) {
-		if (this.tileHandle == null) { return false; } // pics not loaded
+	public boolean loadLevel(String path) {
+		if (this.handleTile == null) { return false; } // pics not loaded
 
 		// Only keep track of one level at a time.
-		this.lvl = new Level(this.tileHandle, this.handleEntities, biome, Settings.zoom());
+		this.lvl = new Level(
+			this.handleTile,
+			this.handleEntities,
+			Settings.zoom()
+		);
 
+		// Have the level class load the file specified at path
 		if (!this.lvl.loadFile("/resources/" + path)) {
+			// An error has occured when the level class loaded
+			// the level; return false
 			return false;
 		}
 
-		switch (biome) {
+		// Change background based on biome of level
+		switch (this.lvl.getBiome()) {
+		case ROCKY:
+			this.setBackground(Settings.COLOUR_ROCK);
+			break;
 		default:
 			this.setBackground(Settings.COLOUR_SKY);
 		}
@@ -394,35 +313,40 @@ public class Game extends JPanel implements ActionListener {
 		this.running = false;
 		this.renderer.interrupt();
 		this.renderer = null;
+		this.entities.clear();
 
+		this.setBackground(Settings.COLOUR_ROCK);
+
+		this.menu.setDescription("Play again?");
 		this.menu.setVisible(true);
 	} /* End method newGame */
 
 
 	public void startGame() {
-		Settings.get().setZoom(zoomSelect.getValue() / 100d);
+		Settings.get().setZoom(this.menu.getCurrentZoom());
 		this.loadGraphics();
 
-		String levelName = (String) levelList.getSelectedItem();
-
-		this.loadLevel(levelName, Biome.SANDY);
+		this.loadLevel(this.menu.getCurrentLevel());
 
 		Point2D pSpawn = this.lvl.getPlayerStart();
+		Settings.get().setLevelWidth(this.lvl.getWidth());
+		Settings.get().setLevelHeight(this.lvl.getHeight());
 
 		this.player = new Player(
-			"Bob",
 			5, handleP1,
+			// Starting location
 			new Rectangle2D.Double(
 				pSpawn.getX(),
 				pSpawn.getY(),
 				Settings.PLAYER_WIDTH * Settings.zoom(),
-				Settings.PLAYER_HEIGHT * Settings.zoom()), null
+				Settings.PLAYER_HEIGHT * Settings.zoom()
+			),
+			null
 		);
 
-		this.enemies = this.lvl.getEnemies();
-		this.flag = this.lvl.getFlag();
+		this.entities.addAll(this.lvl.getEntities());
 
-		this.cam = new Camera(this.lvl.getLevel(this.tileHandle, Settings.zoom()));
+		this.cam = new Camera(this.lvl.getLevel(this.handleTile, Settings.zoom()));
 
 		this.menu.setVisible(false);
 
@@ -430,8 +354,7 @@ public class Game extends JPanel implements ActionListener {
 		this.renderer = new Renderer();
 		this.renderer.start();
 		this.running = true;
-		this.deathSequence = false;
-		this.mProgress.setIndeterminate(false);
+		this.endSequence = false;
 	} /* End method startGame */
 
 
@@ -506,7 +429,7 @@ public class Game extends JPanel implements ActionListener {
 		if (!this.running) { return; }
 		this.clock += diffT;
 
-		if (this.clock > 200 && deathSequence) { 
+		if (this.clock > 500 && endSequence) { 
 			exitGame();
 		}
 
@@ -515,49 +438,52 @@ public class Game extends JPanel implements ActionListener {
 		player.update(diffT, bounds, climbable);
 
 		checkHittingBox();
-		checkHittingItem();
-		for (int i = 0; i < this.enemies.size(); i++) {
-			Enemy e = this.enemies.get(i);
-			e.update(diffT, bounds);
-			if (player.isTouching(e.getBounds())) {
-				player.die();
-				this.clock = 0;
-				deathSequence = true;
-			}
-		}
+		updateEntities(diffT, bounds);
+	} /* End method update */
 
-		if (player.isTouching(flag.getBounds())) {
-			deathSequence = true;
-		}
-	} /* End method updateEnemies */
+	public void updateEntities(double diffT, Shape bounds) {
+		Entity ent;
 
-
-	public void checkHittingItem() {
-		Item check; // store each item here for processing
-
-		// Cannot remove items spent up during processing, would ruin
-		// index. Store for removal after.
+		// Remove entities that are dead, etc.
 		int toRemoveCnt = 0;
-		Item[] toRemove = new Item[items.size()];
+		Entity[] toRemove = new Entity[this.entities.size()];
 
-		// Iterate over all items
-		for (int item = 0; item < items.size(); item++) {
-			check = items.get(item);
-			// Check if touching player
-			if (check.isTouching(player.getBounds())) {
-				player.applyAttribute(check.getAttribute()); // Apply one time effect of item
-				toRemove[toRemoveCnt] = check; // Schedule for removal
-				toRemoveCnt++;
+		for (int i = 0; i < this.entities.size(); i++) {
+			ent = this.entities.get(i);
+			ent.update(diffT, bounds);
+
+			if (ent instanceof Enemy) {
+				if (player.isTouching(ent.getBounds())) {
+					player.die();
+					this.clock = 0;
+					endSequence = true;
+				}
+				if (!ent.isAlive()) {
+					toRemove[toRemoveCnt] = ent;
+					toRemoveCnt++;
+				}
+			} else if (ent instanceof Flag) {
+				if (player.isTouching(ent.getBounds())) {
+					this.clock = 0;
+					endSequence = true;
+				}
+			} else if (ent instanceof Item) {
+				Item item = (Item) ent;
+				if (item.isTouching(player.getBounds())) {
+					player.applyAttribute(item.getAttribute());
+					toRemove[toRemoveCnt] = item;
+					toRemoveCnt++;
+				}
 			}
 		}
 
 		// Remove any items queued
 		if (toRemoveCnt > 0) {
-			for (Item removable : toRemove) {
-				this.items.remove(removable);
+			for (Entity removable : toRemove) {
+				this.entities.remove(removable);
 			}
 		}
-	} /* End method checkHittingItem */
+	} /* End method updateEntities */
 
 
 	public void checkHittingBox() {
@@ -577,10 +503,10 @@ public class Game extends JPanel implements ActionListener {
 		Rectangle2D.Double bounds = (Rectangle2D.Double) boxLocation.getBounds2D();
 
 		// Create item from location
-		items.add(new Item(
+		entities.add(new Item(
 			bounds.getX(),
 			bounds.getY()-(Settings.UNIT*Settings.zoom()),
-			handleItems, ItemType.HEALTH
+			handleEntities[2], EntityType.HEALTH
 		));
 	} /* End method checkHittingBox */
 
@@ -595,10 +521,18 @@ public class Game extends JPanel implements ActionListener {
 	public void paint(Graphics g) {
 		super.paint(g);
 
-		if (!this.running) { return; } // No more to paint; not running
+		if (!this.running) { return; } // No need to paint; Game is not
+		                               // running.
 
 		Graphics2D g2d = (Graphics2D)g;
-		cam.beam(g2d, player, items, enemies, flag, Settings.zoom());
+		cam.beam(g2d, player, entities, Settings.zoom());
+		if (endSequence) {
+			if (this.player.isAlive()) {
+				cam.showMsg(g2d, this.font.deriveFont(80f), "Victory!");
+			} else {
+				cam.showMsg(g2d, this.font.deriveFont(80f),"You died . . .");
+			}
+		}
 	} /* End method paint */
 
 } /* End class Game */

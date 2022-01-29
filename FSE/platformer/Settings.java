@@ -96,6 +96,40 @@ public class Settings {
 	} /* End method setZoom */
 
 
+	private double levelWidth = this.resX; // Width of current level
+
+	/**
+	 * Return width of current level in pixels.
+	 */
+	public static double levelWidth() {
+		synchronized(inst) { return inst.levelWidth; }
+	} /* End method levelWidth */
+
+	/**
+	 * Set width of current level in pixels.
+	 */
+	public void setLevelWidth(double width) {
+		synchronized(this) { this.levelWidth = width; }
+	} /* End method setLevelWidth */
+
+
+	private double levelHeight = resY; // Height of current level
+
+	/**
+	 * Return height of current level in pixels.
+	 */
+	public static double levelHeight() {
+		synchronized(inst) { return inst.levelHeight; }
+	} /* End method zoom */
+
+	/**
+	 * Set height of current level in pixels.
+	 */
+	public void setLevelHeight(double height) {
+		synchronized(this) { this.levelHeight = height; }
+	} /* End method setZoom */
+
+
 	public static final int UNIT = 35; // Tile size at 1x zoom
 	public static final int SEP = 0;   // Separator between tiles in spritesheet
 	public static final int internSep = 1;
@@ -108,10 +142,11 @@ public class Settings {
 	public static final int PLAYER_HEIGHT = 46;
 	public static final int P_WIDTH = 36;
 	public static final int P_HEIGHT = 49;
-	public static final double P_SPD = ((double)UNIT) / 700d;
 	public static final double P_JUMP = 5;
+	public static final double P_SPD = 0.05;
 
-	public static final double P_MAX_SPD = 2;
+	public static final double E_MAX_SPD = 2;
+	public static final double E_MIN_SPD = 0.2;
 	public static final double E_GRAVITY = 0.09;
 
 	public static final int P_SPACE = 0;
@@ -119,6 +154,8 @@ public class Settings {
 	public static final String FILE_EXT = "lvl";
 
 	public static final Color COLOUR_SKY = new Color(208, 244, 247, 255);
+	public static final Color COLOUR_ROCK = new Color(131, 148, 148);
+	public static final Color COLOUR_TITLE = new Color(120, 50, 150);
 
 	public static final int SLIME_WIDTH = 26;
 	public static final int SLIME_HEIGHT = 14;

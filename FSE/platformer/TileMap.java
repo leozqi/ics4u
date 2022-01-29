@@ -131,6 +131,12 @@ public class TileMap {
 				return new TileMap(EntityType.SLIME);
 			case '@': // Flag
 				return new TileMap(EntityType.FLAG);
+			case 'c': // Bronze coin
+				return new TileMap(EntityType.B_COIN);
+			case 'C': // Silver coin
+				return new TileMap(EntityType.S_COIN);
+			case '$': // Gold coin
+				return new TileMap(EntityType.G_COIN);
 		/* SPECIAL EFFECTS */
 			case 'x': // BOX
 				return new TileMap(0, 0);
@@ -213,22 +219,24 @@ public class TileMap {
 				return new TileMap(7, biome.row, Attribute.NOT_SQUARE);
 			case ':': // PLATFORM_ROUNDED_LEFT
 				return new TileMap(8, biome.row, Attribute.NOT_SQUARE);
-			case ';': // PLATFORM_ROUNDED_RIGHT
+			case '^': // PLATFORM_CENTER
 				return new TileMap(9, biome.row, Attribute.NOT_SQUARE);
-			case '/': // SLOPE_LEFT
+			case ';': // PLATFORM_ROUNDED_RIGHT
 				return new TileMap(10, biome.row, Attribute.NOT_SQUARE);
+			case '/': // SLOPE_LEFT
+				return new TileMap(11, biome.row, Attribute.NOT_SQUARE);
 			case '\'': // SLOPE_CORNER_LEFT
-				return new TileMap(11, biome.row);
-			case '\\': // SLOPE_RIGHT
-				return new TileMap(12, biome.row, Attribute.NOT_SQUARE);
+				return new TileMap(12, biome.row);
+			case '|': // SLOPE_RIGHT
+				return new TileMap(13, biome.row, Attribute.NOT_SQUARE);
 			case '"': // SLOPE_CORNER_RIGHT
-				return new TileMap(13, biome.row);
-			case '#': // BLOCK_ROUNDED_LEFT
 				return new TileMap(14, biome.row);
-			case '-': // BLOCK
+			case '#': // BLOCK_ROUNDED_LEFT
 				return new TileMap(15, biome.row);
-			case '*': // BLOCK_ROUNDED_RIGHT
+			case '-': // BLOCK
 				return new TileMap(16, biome.row);
+			case '*': // BLOCK_ROUNDED_RIGHT
+				return new TileMap(17, biome.row);
 		/* DEFAULT */
 			default: // AIR
 				return new TileMap();

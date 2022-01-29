@@ -1,8 +1,13 @@
-//---------------------------------------------------------------------------//
-// Stores one single level of the game.                                      //
+// ------------------------------------------------------------------------- //
+// The Level class loads levels from text files and stores level data        //
+// separate from graphics data.                                              //
 //                                                                           //
-// Author:      Leo Qi                                                       //
-//---------------------------------------------------------------------------//
+// Package:  platformer                                                      //
+// Filename: Level.java                                                      //
+// Author:   Leo Qi                                                          //
+// Class:    ICS4U St. Denis                                                 //
+// Date due: Jan. 30, 2022.                                                  //
+// ------------------------------------------------------------------------- //
 
 package platformer;
 
@@ -13,7 +18,6 @@ import java.nio.charset.Charset;
 import java.awt.image.BufferedImage;
 import java.awt.*;
 import java.awt.geom.*;
-import java.awt.geom.Path2D;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 
@@ -40,9 +44,9 @@ public class Level {
 
 	// Starting coordinates of player
 	private Point2D.Double pCoords = new Point2D.Double(0, 0);
-	// Starting coordinates / descriptors of enemies
-	private ArrayList<Enemy> enemies = new ArrayList<Enemy>();
-	private Flag flag = null;
+
+	// Store entities contained within the level
+	private ArrayList<Entity> entities = new ArrayList<Entity>();
 
 	private Area bounds = new Area();            // Store normal bounds
 	private Area climbable = new Area();         // Store climbable locations
@@ -51,7 +55,19 @@ public class Level {
 
 	// Store sprites of entities that are not the player within the level
 	private SpriteHandler[] entityCostumes;
-	private Biome biome; // Biome (general appearance) of the level
+
+	// Biome (general appearance) of the level
+	private Biome biome = Biome.GRASSY;
+
+	private RenderingHints enableAntiAlias = new RenderingHints(
+		RenderingHints.KEY_ANTIALIASING,
+		RenderingHints.VALUE_ANTIALIAS_ON
+	);
+	private RenderingHints enableHighQuality = new RenderingHints(
+		RenderingHints.KEY_RENDERING,
+		RenderingHints.VALUE_RENDER_QUALITY
+	);
+
 	private double zoom; // Zoom of the level (x1 etc)
 
 	/**
@@ -65,11 +81,9 @@ public class Level {
 	 * @param zoom the zoom level of the level, with 1 being no zoom.
 	 */
 	public Level(
-		SpriteHandler tiles, SpriteHandler[] enemies, Biome biome,
-		double zoom
+		SpriteHandler tiles, SpriteHandler[] enemies, double zoom
 	) {
 		this.tiles = tiles;
-		this.biome = biome;
 		this.entityCostumes = enemies;
 		this.zoom = zoom;
 	} /* End constructor */
@@ -86,6 +100,17 @@ public class Level {
 	 * these docs but did not directly take any code:
 	 *
 	 * <https://docs.oracle.com/javase/8/docs/api/java/io/InputStreamReader.html>
+	 *
+	 * The Level class scans the first character of the first line as the
+	 * indicator for which theme to use:
+	 *
+	 * 'g': Grassy
+	 * 'd': Dirty (dirt)
+	 * 'r': Rocky
+	 * 'a': Sandy
+	 * 's': Snowy
+	 *
+	 * See the Biome enumeration in Biome.java for more details.
 	 *
 	 * @param path Path of the level file (relative from class)
 	 * @return true if success, false if error encountered (failed to load)
@@ -116,6 +141,9 @@ public class Level {
 			);
 
 			// Read one line at a time
+			// Load biome
+			ln = stdin.readLine();
+			this.loadBiome((char)ln.codePointAt(0));
 			ln = stdin.readLine();
 			while (ln != null) {
 				tmp.add(ln);
@@ -154,6 +182,15 @@ public class Level {
 	} /* End method loadFile */
 
 
+	public void loadBiome(char biomeCode) {
+		for (Biome biome : Biome.values()) {
+			if (biome.rep == biomeCode) {
+				this.biome = biome;
+			}
+		}
+	} /* End method loadBiome */
+
+
 	/**
 	 * Set a block in the level as a specific type.
 	 *
@@ -185,14 +222,16 @@ public class Level {
 		ArrayList<Attribute> typeAttrs = type.getAttributes();
 
 		if (typeAttrs.contains(Attribute.EMPTY)) {
+			// Tile is empty, nothing else to do
 			return;
 		}
 		if (typeAttrs.contains(Attribute.NOT_SQUARE)) {
+			// Create exact boundaries for not-square tiles
 			area = Utilities.exactBounds(
 				type.getTile(this.tiles), x, y
 			);
 		} else {
-			// Is a square
+			// Is a square; use simple rectangle boundary
 			area = new Area(new Rectangle2D.Double(
 				x, y,
 				Settings.UNIT * this.zoom,
@@ -200,35 +239,65 @@ public class Level {
 			));
 		}
 		if (!typeAttrs.contains(Attribute.PASSABLE)) {
+			// Not passable; add area to overall bounding-box
 			this.bounds.add(area);
 		}
 		if (typeAttrs.contains(Attribute.ITEMBOX)) {
+			// Is an itembox; add area to special bounding-boxes
 			this.boxes.add(area);
 		}
 		if (typeAttrs.contains(Attribute.CLIMBABLE)) {
+			// Climbable; add to climbable area
 			this.climbable.add(area);
 		}
 	} /* End method setBlock */
 
 
+	/**
+	 * Set entities based on tile start locations.
+	 *
+	 * @param type tile containing data on entity's type.
+	 * @param x real x position of entity based on tile (pixels).
+	 * @param y real y position of entity based on tile (pixels).
+	 */
 	public void setEntity(TileMap type, int x, int y) {
 		EntityType entityType = type.getEntityType();
 
 		switch (entityType) {
 		case FLAG:
-			this.flag = new Flag(x, y, this.entityCostumes[1]);
+			this.entities.add(new Flag(
+				x, y, this.entityCostumes[1]
+			));
 			break;
 		case PLAYER:
 			this.pCoords = new Point2D.Double(x, y);
 			break;
 		case SLIME:
-			this.enemies.add(new Enemy(
-				EntityType.SLIME,
-				x, y,
-				this.entityCostumes[0],
-				null
+			this.entities.add(new Enemy(
+				EntityType.SLIME, x, y,
+				this.entityCostumes[0], null
 			));
 			break;
+		case B_COIN:
+			this.entities.add(new Item(
+				x, y,
+				this.entityCostumes[2],
+				entityType
+			));
+			break;
+		case S_COIN:
+			this.entities.add(new Item(
+				x, y,
+				this.entityCostumes[2],
+				entityType
+			));
+			break;
+		case G_COIN:
+			this.entities.add(new Item(
+				x, y,
+				this.entityCostumes[2],
+				entityType
+			));
 		}
 	} /* End method setEntity */
 
@@ -306,6 +375,8 @@ public class Level {
 			BufferedImage.TYPE_INT_ARGB    // Type
 		);
 		Graphics2D g2d = ret.createGraphics(); // Draw tiles onto image
+		g2d.setRenderingHints(this.enableAntiAlias);
+		g2d.setRenderingHints(this.enableHighQuality);
 
 		// Iterate for every row (y)
 		for (int row = 0; row < this.getRowNum(); row++) {
@@ -351,8 +422,12 @@ public class Level {
 
 	public Point2D.Double getPlayerStart() { return this.pCoords; }
 
-	public ArrayList<Enemy> getEnemies() { return this.enemies; }
+	public ArrayList<Entity> getEntities() { return this.entities; }
 
-	public Flag getFlag() { return this.flag; }
+	public double getWidth() { return this.cols * Settings.UNIT * this.zoom; }
+	public double getHeight() { return this.rows * Settings.UNIT * this.zoom; }
+
+
+	public Biome getBiome() { return this.biome; }
 
 } /* End class Level */

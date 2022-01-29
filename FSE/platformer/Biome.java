@@ -11,22 +11,25 @@
 package platformer;
 
 public enum Biome {
-	GRASSY(1), // Grass theme
-	DIRTY(2),
-	ROCKY(3),
-	SANDY(4),
-	SNOWY(5);
+	GRASSY(1, 'g'), // Grass theme
+	DIRTY(2, 'd'),
+	ROCKY(3, 'r'),
+	SANDY(4, 'a'),
+	SNOWY(5, 's');
 
-	public final int row;
+	public final int  row;
+	public final char rep;
 
 	/**
 	 * Represents a "biome" or theme of a level.
 	 *
 	 * The "row" of blocks of the theme in the spritesheet is stored in the
-	 * `row` field.
+	 * `row` field. The character representation of the Biome in a save
+	 * file is stored in `rep`.
 	 */
-	private Biome(int row) {
+	private Biome(int row, char rep) {
 		this.row = row;
+		this.rep = rep;
 	} /* End constructor */
 
 } /* End class Biome */

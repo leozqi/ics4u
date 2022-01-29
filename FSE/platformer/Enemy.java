@@ -26,7 +26,7 @@ public class Enemy extends Entity {
 		EntityType entity, double x, double y, SpriteHandler sh,
 		Attribute[] attrs
 	) {
-		super("enemy",
+		super(
 			entity.hp,
 			sh,
 			new Rectangle2D.Double(x, y, Settings.SLIME_WIDTH*Settings.zoom(), Settings.SLIME_HEIGHT*Settings.zoom()),

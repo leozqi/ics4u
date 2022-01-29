@@ -26,10 +26,10 @@ public class Player extends Entity implements KeyListener {
 	boolean climbing = false;
 
 	public Player(
-		String name, int hp, SpriteHandler sh, Rectangle2D bounds,
+		int hp, SpriteHandler sh, Rectangle2D bounds,
 		Attribute[] attrs
 	) {
-		super(name, hp, sh, bounds, attrs);
+		super(hp, sh, bounds, attrs);
 	} /* End constructor */
 
 

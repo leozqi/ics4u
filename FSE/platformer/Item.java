@@ -11,32 +11,9 @@ package platformer;
 import java.awt.image.BufferedImage;
 import java.awt.geom.Rectangle2D;
 
-enum ItemType {
-	B_COIN(0, Attribute.COIN_1),   // Bronze coin
-	S_COIN(1, Attribute.COIN_10),  // Silver coin
-	G_COIN(2, Attribute.COIN_100), // Gold coin
-	HEALTH(5, Attribute.HP_1);     // One health-point (red diamond)
-
-	public final int spriteNum;  // Costume number in spritesheet
-	public final Attribute attr; // The attribute on the player
-
-	/**
-	 * Represents the type of an Item.
-	 *
-	 * The `spriteNum` field allows easy access for Items to determine their
-	 * costume number on a spritesheet.
-	 */
-	private ItemType(int spriteNum, Attribute attr) {
-		this.spriteNum = spriteNum;
-		this.attr = attr;
-	} /* End constructor */
-
-} /* End enum ItemType */
-
-
 public class Item extends Entity {
 
-	ItemType type; // Stores the type of the item.
+	EntityType type; // Stores the type of the item.
 
 	/**
 	 * Represents one consumable item that the player can take.
@@ -45,9 +22,8 @@ public class Item extends Entity {
 	 * The sprite of an item and the type are both convienently indicated by
 	 * the ItemType class.
 	 */
-	public Item(double x, double y, SpriteHandler costumes, ItemType type) {
+	public Item(double x, double y, SpriteHandler costumes, EntityType type) {
 		super( // Use the constructor of base Entity for most setup
-			"item",         // Name of entity
 			0,              // Health points (none since it is item)
 			costumes,       // SpriteHandler for costumes
 

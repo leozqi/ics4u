@@ -22,7 +22,6 @@ public class Flag extends Entity {
 	 */
 	public Flag(double x, double y, SpriteHandler costumes) {
 		super( // Use the constructor of base Entity for most setup
-			"item",         // Name of entity
 			0,              // Health points (none since it is item)
 			costumes,       // SpriteHandler for costumes
 

@@ -1,9 +1,12 @@
 // ------------------------------------------------------------------------- //
-// Renders onto the main JPanel with more control.                           //
+// The Camera class renders game elements onto the main JPanel with more     //
+// control.                                                                  //
 //                                                                           //
-// Author:      Leo Qi                                                       //
-// Start date:  2021-01-10                                                   //
-// Finish date:                                                              //
+// Package:  platformer                                                      //
+// Filename: Camera.java                                                     //
+// Author:   Leo Qi                                                          //
+// Class:    ICS4U St. Denis                                                 //
+// Date due: Jan. 30, 2022.                                                  //
 // ------------------------------------------------------------------------- //
 
 package platformer;
@@ -14,88 +17,121 @@ import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Iterator;
 
-class Camera {
+public class Camera {
 
-	BufferedImage map;
+	BufferedImage map; // Store image of level to display
 
+	/**
+	 * Create a Camera.
+	 *
+	 * A Camera first renders the base level as one image stored in the
+	 * `map` field. Then, entities and the player are drawn on top each
+	 * frame.
+	 *
+	 * @param lvlMap base image of the level.
+	 */
 	public Camera(BufferedImage lvlMap) {
 		this.map = lvlMap;
 	} /* End constructor */
 
 
+	/**
+	 * Render one frame of the level centred on `focus` based on the
+	 * positions of the `entities`.
+	 *
+	 * Draws the frame directly onto a rendering element such as a
+	 * BufferedImage or `paint()` function of a Swing component via a
+	 * Graphics2D object.
+	 *
+	 * @param g2d Graphics2D object.
+	 * @param focus Entity the Camera should focus on.
+	 * @param entities entities to draw onto the level loaded into the
+	 *                 Camera.
+	 * @param zoom zoom of the level.
+	 */
 	public void beam(
-		Graphics2D g2d, Entity focus, ArrayList<Item> items,
-		ArrayList<Enemy> enemies, Flag flag, double zoom
+		Graphics2D g2d, Entity focus, ArrayList<Entity> entities,
+		double zoom
 	) {
+		// Copy image used to display the level as otherwise painted
+		// entities will be duplicated on subsequent frames.
 		BufferedImage canvas = Utilities.copy(map);
 
+		// Paint on canvas
 		Graphics2D brush = canvas.createGraphics();
 
-		// Draw focus
-		Point2D pF = focus.getPoint();
+		/* Draw `focus`: centred entity */
+		Point2D loc = focus.getPoint(); // Location to draw
 		brush.drawImage(
-			focus.getSprite(),
-			(int)(pF.getX()),
-			(int)(pF.getY()),
+			focus.getSprite(), // BufferedImage of focus
+			(int)(loc.getX()), // X of focus origin
+			(int)(loc.getY()), // Y of focus origin
 			null
 		);
 
-		Point2D pE;
+		/* Draw other entities */
 		Entity subject;
-		/* Draw all entity sets */
-		for (int i = 0; i < items.size(); i++) {
-			subject = null;
-			subject = items.get(i);
-			pE = subject.getPoint();
+		// Iterate over all entities
+		for (int i = 0; i < entities.size(); i++) {
+			subject = entities.get(i);   // Get subject from list
+			loc = subject.getPoint();    // Get point from subject
 
+			// Draw subject
 			brush.drawImage(
-				subject.getSprite(),
-				(int)(pE.getX()),
-				(int)(pE.getY()),
+				subject.getSprite(), // BufferedImage of focus
+				(int)(loc.getX()),   // X of subject origin
+				(int)(loc.getY()),   // Y of subject origin
 				null
 			);
 		}
+		brush.dispose(); // Free brush; finished using it
 
-		/* Draw all enemies */
-		for (int i = 0; i < enemies.size(); i++) {
-			subject = enemies.get(i);
-			pE = subject.getPoint();
-
-			brush.drawImage(
-				subject.getSprite(),
-				(int)(pE.getX()),
-				(int)(pE.getY()),
-				null
-			);
-		}
-
-		subject = flag;
-		pE = flag.getPoint();
-
-		brush.drawImage(
-			subject.getSprite(),
-			(int)(pE.getX()),
-			(int)(pE.getY()),
-			null
-		);
-
-		brush.dispose();
-
+		// Scale X and Y to viewports.
 		double xCoord = ((Settings.resX() / 2)) - focus.getCentreX();
-		double yCoord = ((Settings.resY() / 2) * 1.3) - focus.getCentreY();
+		double yCoord = ((Settings.resY() / 2) * 1.2) - focus.getCentreY();
 
+		// Draw whole composed image onto object
 		g2d.drawImage(
 			canvas,
+			// Scale X of image into available space
 			(int)Math.max(
+				// Limit level-scroll to rightermost of level
 				Settings.resX() - canvas.getWidth(),
-				Math.min(0, xCoord)
+				// Limit level-scroll to leftermost of level
+				Math.min(0, xCoord) // 
 			),
 			(int)Math.max(
+				// Limit level-scroll to bottom of level
 				Settings.resY() - canvas.getHeight(),
+				// Limit level-scroll to top of level
 				Math.min(0, yCoord)
 			),
 			null
 		);
 	} /* End method beam */
+
+
+	/**
+	 * Draw a message directly onto a rendering element such as a
+	 * BufferedImage or `paint()` function of a Swing component via a
+	 * Graphics2D object.
+	 *
+	 * @param g2d Graphics2D object.
+	 * @param font the font to use for the message.
+	 * @param msg the message to display.
+	 */
+	public void showMsg(Graphics2D g2d, Font font, String msg) {
+		g2d.setFont(font); // Set font to draw message with
+
+		// Calculate size of final message with FontMetrics
+		FontMetrics fm = g2d.getFontMetrics();
+		Rectangle2D fontArea = fm.getStringBounds(msg, g2d);
+
+		float xPos = (float) ((Settings.resX() / 2) - fontArea.getCenterX());
+		float yPos = (float) ((Settings.resY() / 2) - fontArea.getCenterY());
+
+		g2d.drawString(msg, xPos, yPos);
+
+	} /* End method showMsg */
 
 } /* End class Camera */
