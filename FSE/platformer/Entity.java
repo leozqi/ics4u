@@ -17,14 +17,6 @@ import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.concurrent.*;
 
-enum Attribute {
-	DOUBLE_JUMP, // Apply double jump
-	COIN_1,      // Give one coin
-	COIN_10,     // Give ten coins
-	COIN_100,    // Give one hundred coins
-	HP_1         // Give one health
-}
-
 public class Entity {
 
 	/* Identifiers */
@@ -54,6 +46,7 @@ public class Entity {
 	double clock = 0d; // Clock for sprite change cycles
 	double tickTime = 10d; // Time to effect one animation cycle
 	int spriteCnt; // current costume of sprite
+	boolean alive = true;
 
 	/**
 	 * Create a new entity.
@@ -89,6 +82,15 @@ public class Entity {
 	 * Apply a status effect to the entity.
 	 */
 	public void applyStatus(Effect e) { effects.add(e); }
+
+
+	public void die() {
+		this.alive = false;
+		this.setAccelX(0);
+		this.setVelX(0);
+		this.setAccelY(Settings.E_GRAVITY);
+		this.jump(-Settings.P_JUMP);
+	}
 
 
 	/**
@@ -147,7 +149,7 @@ public class Entity {
 
 			// Reached needed ticks to update costume?
 			if (this.clock > this.tickTime) {
-				updateSprite();
+				updateTick();
 				clock = 0; // Reset clock
 			}
 		}
@@ -155,7 +157,7 @@ public class Entity {
 
 
 	/**
-	 * Adjusts velocity based on acceleration.
+	 * Adjusts velocity based on acceleration for the X axis.
 	 *
 	 * @param diffT time adjustment between frames.
 	 */
@@ -188,15 +190,19 @@ public class Entity {
 	/**
 	 * Called whenever a "tick" for the entity has passed.
 	 *
-	 * Used for updating costumes and sprites. Should be overrided by
-	 * classes inheriting it.
+	 * Unlike the update function per frame, this "per tick" method is
+	 * controlled with `tickTime` which can be set by inheriting classes
+	 * with the `super.tickTime` field. It updates constantly; about the
+	 * same time passes per tick.
+	 *
+	 * This is perfect for sprite updating.
 	 */
-	public void updateSprite() {}
+	public void updateTick() {}
 
 
 	public void adjustVelY(double diffT) {
-		this.yVel += (diffT*this.yAccel);
-	} /* End method adjustVelocity */
+		this.yVel += ((diffT*this.yAccel)/Settings.zoom());
+	} /* End method adjustVelY */
 
 
 	/**
@@ -307,7 +313,7 @@ public class Entity {
 	 * Classes inheriting the Entity class costumesould change this to a different
 	 * return value reflecting the SpriteHandler and Spritesheet they use.
 	 */
-	public BufferedImage getSprite() { return costumes.getTile(0, 0); }
+	public BufferedImage getSprite() { return costumes.getTile(0, 0, false); }
 
 
 	/**

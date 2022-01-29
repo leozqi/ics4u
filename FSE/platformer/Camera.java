@@ -36,7 +36,7 @@ class Camera {
 		brush.drawImage(
 			focus.getSprite(),
 			(int)(pF.getX()),
-			(int)(pF.getY()),// * zoom),
+			(int)(pF.getY()),
 			null
 		);
 
@@ -63,15 +63,15 @@ class Camera {
 
 			brush.drawImage(
 				subject.getSprite(),
-				(int)(pE.getX()),//*zoom),
-				(int)(pE.getY()),//*zoom),
+				(int)(pE.getX()),
+				(int)(pE.getY()),
 				null
 			);
 		}
 		brush.dispose();
 
-		double xCoord = ((Settings.resX() / 2) * zoom) - focus.getCentreX();
-		double yCoord = ((Settings.resY() / 2) * zoom * 1.3) - focus.getCentreY();
+		double xCoord = ((Settings.resX() / 2)) - focus.getCentreX();
+		double yCoord = ((Settings.resY() / 2) * 1.3) - focus.getCentreY();
 
 		g2d.drawImage(
 			canvas,

@@ -1,10 +1,8 @@
-// ------------------------------------------------------------------------- //
+//---------------------------------------------------------------------------//
 // Stores one single level of the game.                                      //
 //                                                                           //
 // Author:      Leo Qi                                                       //
-// Start date:  2022-01-02                                                   //
-// Finish date: 2022-01-18                                                   //
-// ------------------------------------------------------------------------- //
+//---------------------------------------------------------------------------//
 
 package platformer;
 
@@ -46,20 +44,24 @@ public class Level {
 	private ArrayList<Enemy> enemies = new ArrayList<Enemy>();
 
 	private Area bounds = new Area();            // Store normal bounds
+	private Area climbable = new Area();         // Store climbable locations
 	private SpecBounds boxes = new SpecBounds(); // Store special boxes
 	private SpriteHandler tiles;                 // Store tile images
+
+	// Store sprites of entities that are not the player within the level
 	private SpriteHandler[] entityCostumes;
-	private Biome biome;
-	private double zoom;
+	private Biome biome; // Biome (general appearance) of the level
+	private double zoom; // Zoom of the level (x1 etc)
 
 	/**
 	 * The Level class holds the data for one level.
 	 *
 	 * Use the loadFile method afterwards to load a file into the level.
 	 *
-	 * @param path  Path of level file (relative from class)
 	 * @param tiles SpriteHandler holding image tiles.
-	 * @param biome Biome code of the level.
+	 * @param enemies SpriteHandler[] array for all enemy costumes
+	 * @param biome Biome constant of the level.
+	 * @param zoom the zoom level of the level, with 1 being no zoom.
 	 */
 	public Level(
 		SpriteHandler tiles, SpriteHandler[] enemies, Biome biome,
@@ -78,7 +80,11 @@ public class Level {
 	 * Iterates over the whole file first to determine number of rows
 	 * and columns to make a storage array.
 	 *
-	 * Next, actually load the file into individual tiles.
+	 * Next, actually load the file into individual tiles. Files are read
+	 * with the UTF-8 charset via `InputStreamReader`. I referenced
+	 * these docs but did not directly take any code:
+	 *
+	 * <https://docs.oracle.com/javase/8/docs/api/java/io/InputStreamReader.html>
 	 *
 	 * @param path Path of the level file (relative from class)
 	 * @return true if success, false if error encountered (failed to load)
@@ -99,8 +105,6 @@ public class Level {
 			// Read with the UTF-8 charset
 			// Use InputStreamReader to specify charset:
 			// InputStreamReader (InputStream in, Charset cs)
-			//
-			// Docs: <https://docs.oracle.com/javase/8/docs/api/java/io/InputStreamReader.html>
 			stdin = new BufferedReader(
 				new InputStreamReader(
 					new FileInputStream(
@@ -151,50 +155,78 @@ public class Level {
 
 	/**
 	 * Set a block in the level as a specific type.
+	 *
+	 * @param row row of the block
+	 * @param col column of the block
+	 * @param type TileMap to set the block as
 	 */
 	public void setBlock(int row, int col, TileMap type) {
 		if (this.map == null) { return; } // level is not loaded, exit
 
-		synchronized(this.map) {
-			int x = (int)(0 + (col * Settings.UNIT) * this.zoom);
-			int y = (int)(0 + (row * Settings.UNIT) * this.zoom);
-			if ((!type.isPassable()) || type.isItemBox()) {
-				// Get exact boundaries of tile
-				// The function strips all transparent space.
-				Area tmp = Utilities.exactBounds(
-					type.getTile(this.tiles), x, y
-				);
+		/* Calculate `x` and `y` coordinates of block */
+		int x = (int)(0 + (col * Settings.UNIT) * this.zoom);
+		int y = (int)(0 + (row * Settings.UNIT) * this.zoom);
 
-				if (!type.isPassable()) {
-					this.bounds.add(tmp);
-				}
-				if (type.isItemBox()) {
-					System.out.println("Item");
-					this.boxes.add(tmp);
-				}
-			}
-			EntityType entityType = type.getEntityType();
-			switch (entityType) {
-			case PLAYER:
-				this.pCoords = new Point2D.Double(x, y);
-				return;
-			case SLIME:
-				this.enemies.add(new Enemy(
-					EntityType.SLIME,
-					x, y,
-					this.entityCostumes[0],
-					null
-				));
-				return;
-			}
+		/* Set entity information if tile represents an entity */
+		if (type.getEntityType() != EntityType.NONE) {
+			this.setEntity(type, x, y);
+			return;
+		}
 
-			try {
-				this.map[row][col] = type;
-			} catch (ArrayIndexOutOfBoundsException e) {
-				return; // row and column do not fit, exit.
-			}
+		/* It is a tile; add to map of all tiles */
+		try {
+			this.map[row][col] = type;
+		} catch (ArrayIndexOutOfBoundsException e) {
+			return; // row and column do not fit, exit.
+		}
+
+		Area area; // Area covered by the tile
+		ArrayList<Attribute> typeAttrs = type.getAttributes();
+
+		if (typeAttrs.contains(Attribute.EMPTY)) {
+			return;
+		}
+		if (typeAttrs.contains(Attribute.NOT_SQUARE)) {
+			area = Utilities.exactBounds(
+				type.getTile(this.tiles), x, y
+			);
+		} else {
+			// Is a square
+			area = new Area(new Rectangle2D.Double(
+				x, y,
+				Settings.UNIT * this.zoom,
+				Settings.UNIT * this.zoom
+			));
+		}
+		if (!typeAttrs.contains(Attribute.PASSABLE)) {
+			this.bounds.add(area);
+		}
+		if (typeAttrs.contains(Attribute.ITEMBOX)) {
+			this.boxes.add(area);
+		}
+		if (typeAttrs.contains(Attribute.CLIMBABLE)) {
+			this.climbable.add(area);
 		}
 	} /* End method setBlock */
+
+
+	public void setEntity(TileMap type, int x, int y) {
+		EntityType entityType = type.getEntityType();
+
+		switch (entityType) {
+		case PLAYER:
+			this.pCoords = new Point2D.Double(x, y);
+			break;
+		case SLIME:
+			this.enemies.add(new Enemy(
+				EntityType.SLIME,
+				x, y,
+				this.entityCostumes[0],
+				null
+			));
+			break;
+		}
+	}
 
 
 	/**
@@ -239,7 +271,9 @@ public class Level {
 		TileMap t = this.getBlock(row, col);
 
 		if (t == null)   { return null; } // No tile is created
-		if (t.isEmpty()) { return null; } // Tile is air / empty
+		if (t.getAttributes().contains(Attribute.EMPTY)) {
+			return null; // Tile is air / empty
+		}
 
 		BufferedImage bi = t.getTile(th);
 
@@ -305,6 +339,11 @@ public class Level {
 	 */
 	public SpecBounds getSpecBounds() { return boxes; }
 
+
+	/**
+	 *
+	 */
+	public Area getClimbable() { return this.climbable; }
 
 	public Point2D.Double getPlayerStart() { return this.pCoords; }
 

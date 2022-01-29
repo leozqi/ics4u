@@ -22,8 +22,8 @@ import java.awt.geom.*;
 
 public class Player extends Entity implements KeyListener {
 
-	double yAccel = 0.09;
 	boolean lastLeft = false;
+	boolean climbing = false;
 
 	public Player(
 		String name, int hp, SpriteHandler sh, Rectangle2D bounds,
@@ -42,27 +42,49 @@ public class Player extends Entity implements KeyListener {
 	 * @param diffT difference in time
 	 * @param bounds Shape representing collision boxes entity should be
 	 *               aware of.
+	 * @param climbable Shape representing climbable areas the entity
+	 *                  should be aware of.
 	 */
-	@Override
-	public void update(double diffT, Shape bounds) {
+	public void update(double diffT, Shape bounds, Shape climbable) {
 		super.update(diffT, bounds);
 
 		/* Adjust velX for friction, slip */
 		super.adjustVelX(diffT);
 		/* Adjust velY for gravity */
+
+		if (this.alive) {
+		if (climbable.intersects(this.bounds)) {
+			if (this.climbing != true) {
+				this.climbing = true;
+				super.setVelY(0);
+				super.setAccelY(0);
+				this.jumpCnt = 0;
+			}
+		} else {
+			this.climbing = false;
+			super.setAccelY(Settings.E_GRAVITY);
+		}
+		}
 		super.adjustVelY(diffT);
 
 		/* Bounded move takes obstacles into account */
-		super.boundedMove(
-			diffT * this.xVel * Settings.zoom(),
-			diffT * this.yVel * Settings.zoom(),
-			bounds
-		);
+		if (this.alive) {
+			super.boundedMove(
+				diffT * this.xVel * Settings.zoom(), // Take into account zoom
+				diffT * this.yVel * Settings.zoom(),
+				bounds
+			);
+		} else {
+			super.move(
+				diffT * this.xVel * Settings.zoom(),
+				diffT * this.yVel * Settings.zoom()
+			);
+		}
 	} /* End method update */
 
 
 	@Override
-	public void updateSprite() {
+	public void updateTick() {
 		if (spriteCnt > 9) {
 			spriteCnt = 0;
 		} else {
@@ -81,23 +103,30 @@ public class Player extends Entity implements KeyListener {
 			return costumes.getTile(spriteCnt, 0);
 		} else if (super.isMovingLeft()) {
 			lastLeft = true;
-			return costumes.getReversedTile(10 - spriteCnt, 0);
+			return costumes.getTile(spriteCnt, 0, true);
 		} else {
-			return lastLeft ? costumes.getReversedTile(10 - spriteCnt, 0)
-				: costumes.getTile(spriteCnt, 0);
+			return costumes.getTile(spriteCnt, 0, lastLeft);
 		}
 	} /* End getSprite */
 
 
 	@Override
 	public void keyPressed(KeyEvent e) {
+		if (!this.alive) { return; }
 		int code = e.getKeyCode();
 
 		switch (code) {
 		case KeyEvent.VK_W:
-			jump(-Settings.P_JUMP);
+			if (!climbing) {
+				super.jump(-Settings.P_JUMP);
+			} else {
+				super.setVelY(-Settings.P_SPD);
+			}
 			break;
 		case KeyEvent.VK_S:
+			if (climbing) {
+				super.setVelY(Settings.P_SPD);
+			}
 			break;
 		case KeyEvent.VK_A:
 			setAccelX(-Settings.P_SPD);
@@ -111,14 +140,11 @@ public class Player extends Entity implements KeyListener {
 
 	@Override
 	public void keyReleased(KeyEvent e) {
+		if (!this.alive) { return; }
 		int code = e.getKeyCode();
 		switch (code) {
-		case KeyEvent.VK_W:
-			break;
-		case KeyEvent.VK_S:
-			break;
 		case KeyEvent.VK_A:
-			setAccelX(0);
+			setAccelX(0); // Stop moving 
 			break;
 		case KeyEvent.VK_D:
 			setAccelX(0);

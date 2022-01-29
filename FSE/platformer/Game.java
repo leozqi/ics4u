@@ -19,7 +19,7 @@ import java.awt.geom.Point2D.Double;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.net.URL;
-import java.io.IOException;
+import java.io.*;
 
 public class Game extends JPanel implements ActionListener {
 
@@ -35,20 +35,25 @@ public class Game extends JPanel implements ActionListener {
 	ArrayList<Enemy> enemies = new ArrayList<Enemy>();
 
 	/* Initial loading screen */
+	Font font;
 	JPanel menu;
+	JSlider zoomSelect;
 	JComboBox<String> levelList;
 	JProgressBar mProgress;
 
 	/* Game */
 	Camera cam = null;
 	boolean running = false;
-	private double clock;
+	private double clock = 0d;
+	boolean deathSequence = false;
 	Player player = null;
 	Renderer renderer;
 
 	Frame frame;
 
 	public Game(Frame frame) {
+		super(new BorderLayout());
+
 		/* Frame / window */
 		this.frame = frame; // Keep a copy of the JFrame to adjust size
 		this.frame.setResizable(true); // Resizable until level is loaded
@@ -58,10 +63,40 @@ public class Game extends JPanel implements ActionListener {
 		this.setPreferredSize(new Dimension(Settings.resX(), Settings.resY()));
 		this.setFocusable(true);
 
+		if (!this.loadFonts()) { // Load required fonts for menu
+			// Font loading failed, use default
+			this.font = new Font(Font.DIALOG, Font.PLAIN, 18);
+		}
+
 		this.menu = this.buildMenu();
 		this.menu.setVisible(true);
-		this.add(this.menu);
+		this.add(this.menu, BorderLayout.CENTER);
 	} /* End constructor */
+
+
+	/**
+	 * Loads fonts used by the start menu and HUD.
+	 *
+	 * @return true if operation completed successfully, else false
+	 */
+	public boolean loadFonts() {
+		try {
+			URL url = this.getClass().getResource("/resources/font.ttf");
+
+			if (url == null) {
+				return false;
+			}
+
+			this.font = Font.createFont(
+				Font.TRUETYPE_FONT,
+				new File(url.toURI())
+			);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return false;
+		}
+		return true;
+	} /* End method loadFonts */
 
 
 	class ResizeListener extends ComponentAdapter {
@@ -76,7 +111,7 @@ public class Game extends JPanel implements ActionListener {
 			));
 		}
 
-	}
+	} /* End class ResizeListener */
 
 
 	/**
@@ -110,16 +145,32 @@ public class Game extends JPanel implements ActionListener {
 	private JPanel buildMenu() {
 		JPanel retMenu = new JPanel();        // Menu to return is in a JPanel
 
-		JLabel mTitle  = new JLabel("Old(er) Alien Bros!"); // Title
-		JLabel mDescrip = new JLabel("Pick a level");
+		JLabel mTitle  = new JLabel("Go Oust!"); // Title
+		mTitle.setFont(this.font.deriveFont(80f));
+		mTitle.setForeground(new Color(120, 50, 150));
+		JLabel mDescrip = new JLabel("Pick a level!");
+		mDescrip.setFont(this.font.deriveFont(18f));
 		mProgress = new JProgressBar();
 
 		// Get all levels that can be played
 		levelList = new JComboBox<String>(this.getLevelNames());
+		levelList.setFont(this.font.deriveFont(20f));
+		levelList.setMaximumSize( levelList.getPreferredSize());
+
+		JLabel mSliderDescrip = new JLabel("Select a zoom:");
+		mSliderDescrip.setFont(this.font.deriveFont(18f));
+		zoomSelect = new JSlider(JSlider.HORIZONTAL, 50, 200, 100);
+		zoomSelect.setMajorTickSpacing(50);
+		zoomSelect.setSnapToTicks(true);
+		zoomSelect.setPaintLabels(true);
+		zoomSelect.setPaintTicks(true);
+		zoomSelect.setPaintTrack(true);
+		zoomSelect.setFont(this.font.deriveFont(18f));
 
 		// Start button
 		// Doc used: https://docs.oracle.com/javase/8/docs/api/javax/swing/JButton.html
 		JButton mStart  = new JButton("Start!");
+		mStart.setFont(this.font.deriveFont(50f));
 		// the Game class listens for this ActionCommand to start the game
 		mStart.setActionCommand("start");
 		mStart.addActionListener(this);
@@ -142,20 +193,59 @@ public class Game extends JPanel implements ActionListener {
 		// Order items in parallel horizontally (on top of one another)
 		lay.setHorizontalGroup(
 			lay.createParallelGroup(GroupLayout.Alignment.CENTER)
-				.addComponent(mTitle)    // Title
-				.addComponent(mDescrip)  // Description
-				.addComponent(levelList) // List of levels
-				.addComponent(mStart)    // Start button
-				.addComponent(mProgress) // Progress bar
+			.addComponent(mTitle)     // Title
+			.addGroup(lay.createSequentialGroup()
+				.addComponent(mDescrip)   // Description
+				.addComponent(levelList)  // List of levels
+			)
+			.addGroup(lay.createSequentialGroup()
+				.addComponent(mSliderDescrip)
+				.addComponent(
+					zoomSelect,
+					GroupLayout.PREFERRED_SIZE,
+					GroupLayout.DEFAULT_SIZE,
+					GroupLayout.PREFERRED_SIZE
+				)
+			)
+			.addComponent(mStart)
+			.addComponent(mProgress)  // Progress bar
 		);
 
 		lay.setVerticalGroup(
 			lay.createSequentialGroup()
-				.addComponent(mTitle)
+			.addPreferredGap(
+				LayoutStyle.ComponentPlacement.RELATED,
+				GroupLayout.DEFAULT_SIZE,
+				Short.MAX_VALUE
+			)
+			.addComponent(mTitle)
+			.addPreferredGap(
+				LayoutStyle.ComponentPlacement.RELATED,
+				GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+			.addGroup(lay.createParallelGroup()
 				.addComponent(mDescrip)
 				.addComponent(levelList)
-				.addComponent(mStart)
-				.addComponent(mProgress)
+			)
+			.addPreferredGap(
+				LayoutStyle.ComponentPlacement.RELATED,
+				GroupLayout.DEFAULT_SIZE, 50
+			)
+			.addGroup(lay.createParallelGroup()
+				.addComponent(mSliderDescrip)
+				.addComponent(zoomSelect)
+			)
+			.addPreferredGap(
+				LayoutStyle.ComponentPlacement.RELATED,
+				GroupLayout.DEFAULT_SIZE,
+				Short.MAX_VALUE
+			)
+			.addComponent(mStart)
+			.addComponent(mProgress)
+			.addPreferredGap(
+				LayoutStyle.ComponentPlacement.RELATED,
+				GroupLayout.DEFAULT_SIZE,
+				Short.MAX_VALUE
+			)
 		);
 		return retMenu; // Return the built menu
 	} /* End method buildMenu */
@@ -185,39 +275,40 @@ public class Game extends JPanel implements ActionListener {
 	 * @return true if operation completed successfully, else false.
 	 */
 	public boolean loadGraphics() {
+		String tilePath = "/resources/tiles-100.png";
+		if (Settings.zoom() == 2) {
+			tilePath = "/resources/tiles-200.png";
+		} else if (Settings.zoom() == 1.5) {
+			tilePath = "/resources/tiles-150.png";
+		}
+
 		// Load background tiles
 		this.tileHandle = SpriteHandler.createFromFile(
-			this, "/resources/tiles.png",
+			this, tilePath,
 			Settings.UNIT, Settings.UNIT,
-			Settings.internSep, Settings.internSep,
-			Settings.zoom()
+			Settings.SEP, Settings.SEP,
+			Settings.zoom(), true
 		);
 		if (this.tileHandle == null) { return false; }
 
 		// Load player animations
 		this.handleP1 = SpriteHandler.createFromFile(
 			this, "/resources/p1.png",
-			Settings.P_WIDTH, Settings.P_HEIGHT,
-			Settings.P_SPACE, Settings.P_SPACE,
-			Settings.zoom()
+			Settings.P_WIDTH, Settings.P_HEIGHT, Settings.zoom()
 		);
 		if (this.handleP1 == null) { return false; }
 
 		// Load item resources
 		this.handleItems = SpriteHandler.createFromFile(
 			this, "/resources/items.png",
-			Settings.UNIT, Settings.UNIT,
-			Settings.defaultSep, Settings.defaultSep,
-			Settings.zoom()
+			Settings.UNIT, Settings.UNIT, Settings.zoom()
 		);
 		if (this.handleItems == null) { return false; }
 
 		// Load slimes
 		this.handleEnemies[0] = SpriteHandler.createFromFile(
 			this, "/resources/slime.png",
-			Settings.SLIME_WIDTH, Settings.SLIME_HEIGHT,
-			Settings.defaultSep, Settings.defaultSep,
-			Settings.zoom()
+			Settings.SLIME_WIDTH, Settings.SLIME_HEIGHT, Settings.zoom()
 		);
 		if (this.handleEnemies[0] == null) { return false; }
 
@@ -242,7 +333,7 @@ public class Game extends JPanel implements ActionListener {
 	public boolean loadLevel(String path, Biome biome) {
 		if (this.tileHandle == null) { return false; } // pics not loaded
 
-		// We only keep track of one level at a time.
+		// Only keep track of one level at a time.
 		this.lvl = new Level(this.tileHandle, this.handleEnemies, biome, Settings.zoom());
 
 		if (!this.lvl.loadFile("/resources/" + path)) {
@@ -270,7 +361,10 @@ public class Game extends JPanel implements ActionListener {
 		try {
 			// Use Utilities method to walk through all files in
 			// relative resource path
-			files = Utilities.findFiles(Paths.get(url.getPath()), Settings.FILE_EXT);
+			files = Utilities.findFiles(
+				Paths.get(url.getPath()),
+				Settings.FILE_EXT // File extension as string
+			);
 		} catch (IOException e) {
 			// Error:
 			return null;
@@ -290,17 +384,20 @@ public class Game extends JPanel implements ActionListener {
 
 	private void exitGame() {
 		this.running = false;
+		this.renderer.interrupt();
+		this.renderer = null;
 
 		this.menu.setVisible(true);
 	} /* End method newGame */
 
 
 	public void startGame() {
+		Settings.get().setZoom(zoomSelect.getValue() / 100d);
 		this.loadGraphics();
 
 		String levelName = (String) levelList.getSelectedItem();
 
-		this.loadLevel(levelName, Biome.SWAMPY);
+		this.loadLevel(levelName, Biome.SANDY);
 
 		Point2D pSpawn = this.lvl.getPlayerStart();
 
@@ -324,6 +421,7 @@ public class Game extends JPanel implements ActionListener {
 		this.renderer = new Renderer();
 		this.renderer.start();
 		this.running = true;
+		this.deathSequence = false;
 		this.mProgress.setIndeterminate(false);
 	} /* End method startGame */
 
@@ -397,18 +495,26 @@ public class Game extends JPanel implements ActionListener {
 	 */
 	public void update(double diffT) {
 		if (!this.running) { return; }
+		this.clock += diffT;
+
+		if (this.clock > 200 && deathSequence) { 
+			exitGame();
+		}
+
 		Shape bounds = this.lvl.getBounds();
-		player.update(diffT, bounds);
+		Shape climbable = this.lvl.getClimbable(); // get climbable area
+		player.update(diffT, bounds, climbable);
 
 		checkHittingBox();
 		checkHittingItem();
-		updateEnemies(diffT, bounds);
-	} /* End method update */
-
-
-	public void updateEnemies(double diffT, Shape bounds) {
 		for (int i = 0; i < this.enemies.size(); i++) {
-			this.enemies.get(i).update(diffT, bounds);
+			Enemy e = this.enemies.get(i);
+			e.update(diffT, bounds);
+			if (player.isTouching(e.getBounds())) {
+				player.die();
+				this.clock = 0;
+				deathSequence = true;
+			}
 		}
 	} /* End method updateEnemies */
 
@@ -476,10 +582,10 @@ public class Game extends JPanel implements ActionListener {
 	public void paint(Graphics g) {
 		super.paint(g);
 
-		if (this.running) {
-			Graphics2D g2d = (Graphics2D)g;
-			cam.beam(g2d, player, items, enemies, Settings.zoom());
-		}
+		if (!this.running) { return; } // No more to paint; not running
+
+		Graphics2D g2d = (Graphics2D)g;
+		cam.beam(g2d, player, items, enemies, Settings.zoom());
 	} /* End method paint */
 
 } /* End class Game */

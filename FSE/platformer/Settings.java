@@ -96,7 +96,8 @@ public class Settings {
 	} /* End method setZoom */
 
 
-	public static final int UNIT = 35;
+	public static final int UNIT = 35; // Tile size at 1x zoom
+	public static final int SEP = 0;   // Separator between tiles in spritesheet
 	public static final int internSep = 1;
 	public static final int defaultSep = 0;
 

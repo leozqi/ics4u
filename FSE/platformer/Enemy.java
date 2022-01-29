@@ -8,13 +8,9 @@
 
 package platformer;
 
-import java.net.URL;
 import java.io.*;
-import java.util.ArrayList;
-import java.nio.charset.Charset;
 import java.awt.image.BufferedImage;
 import java.awt.*;
-import java.util.ArrayList;
 import java.awt.geom.Point2D.Double;
 import java.awt.geom.Point2D;
 import java.awt.event.*;
@@ -22,7 +18,6 @@ import java.awt.geom.*;
 
 public class Enemy extends Entity {
 
-	double clock = 0d;
 	double yAccel = 0.09;
 	int spriteCnt = 0;
 	double speed = 1d;
@@ -39,6 +34,7 @@ public class Enemy extends Entity {
 		);
 		this.setX(x);
 		this.setY(y);
+		super.tickTime = 30d;
 	} /* End constructor */
 
 
@@ -54,7 +50,11 @@ public class Enemy extends Entity {
 	 */
 	@Override
 	public void update(double diffT, Shape bounds) {
+		super.update(diffT, bounds);
+
+		/* Adjust velY for gravity */
 		super.adjustVelY(diffT);
+
 		if (this.right) {
 			this.setAccelX(1);
 		} else {
@@ -65,26 +65,19 @@ public class Enemy extends Entity {
 			diffT * this.yVel,
 			bounds
 		);
-
-		if (!super.isMovingLeft() && !super.isMovingRight()) {
-			clock = 0;
-			spriteCnt = 0;
-		} else {
-			clock += diffT;
-
-			if (clock > 30) {
-				if (spriteCnt > 0) {
-					spriteCnt = 0;
-				} else {
-					spriteCnt++;
-				}
-				this.setVelX(this.right ? 5 : -5);
-				clock = 0;
-			} else {
-				this.setVelX(0);
-			}
-		}
+		this.setVelX(0);
 	} /* End method update */
+
+
+	@Override
+	public void updateTick() {
+		if (spriteCnt > 1) {
+			spriteCnt = 1;
+		} else {
+			spriteCnt++;
+		}
+		this.setVelX(this.right ? 5 : -5); // Move 5 per tick
+	} /* End method updateTick */
 
 
 	/**
@@ -93,12 +86,12 @@ public class Enemy extends Entity {
 	@Override
 	public BufferedImage getSprite() {
 		if (super.isMovingRight()) {
-			return costumes.getTile(2 - spriteCnt, 0);
+			return costumes.getTile(spriteCnt, 0, false);
 		} else if (super.isMovingLeft()) {
-			return costumes.getReversedTile(spriteCnt, 0);
+			return costumes.getTile(spriteCnt, 0, true);
 		} else {
 			return costumes.getTile(spriteCnt, 0);
 		}
-	} /* End getSprite */
+	} /* End method getSprite */
 
 } /* End class Level */
