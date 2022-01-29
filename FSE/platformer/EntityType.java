@@ -12,6 +12,7 @@ package platformer;
 
 public enum EntityType {
 	NONE(0),    // No type
+	FLAG(0),    // Endgoal flag
 	PLAYER(5),  // Player
 	SLIME(1);   // Slime (moving ground enemy)
 

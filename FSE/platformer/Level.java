@@ -42,6 +42,7 @@ public class Level {
 	private Point2D.Double pCoords = new Point2D.Double(0, 0);
 	// Starting coordinates / descriptors of enemies
 	private ArrayList<Enemy> enemies = new ArrayList<Enemy>();
+	private Flag flag = null;
 
 	private Area bounds = new Area();            // Store normal bounds
 	private Area climbable = new Area();         // Store climbable locations
@@ -214,6 +215,9 @@ public class Level {
 		EntityType entityType = type.getEntityType();
 
 		switch (entityType) {
+		case FLAG:
+			this.flag = new Flag(x, y, this.entityCostumes[1]);
+			break;
 		case PLAYER:
 			this.pCoords = new Point2D.Double(x, y);
 			break;
@@ -226,7 +230,7 @@ public class Level {
 			));
 			break;
 		}
-	}
+	} /* End method setEntity */
 
 
 	/**
@@ -348,5 +352,7 @@ public class Level {
 	public Point2D.Double getPlayerStart() { return this.pCoords; }
 
 	public ArrayList<Enemy> getEnemies() { return this.enemies; }
+
+	public Flag getFlag() { return this.flag; }
 
 } /* End class Level */

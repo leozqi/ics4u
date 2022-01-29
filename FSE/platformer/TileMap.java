@@ -129,6 +129,8 @@ public class TileMap {
 				return new TileMap(EntityType.PLAYER);
 			case 'S': // Slime
 				return new TileMap(EntityType.SLIME);
+			case '@': // Flag
+				return new TileMap(EntityType.FLAG);
 		/* SPECIAL EFFECTS */
 			case 'x': // BOX
 				return new TileMap(0, 0);

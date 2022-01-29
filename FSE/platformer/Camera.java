@@ -25,7 +25,7 @@ class Camera {
 
 	public void beam(
 		Graphics2D g2d, Entity focus, ArrayList<Item> items,
-		ArrayList<Enemy> enemies, double zoom
+		ArrayList<Enemy> enemies, Flag flag, double zoom
 	) {
 		BufferedImage canvas = Utilities.copy(map);
 
@@ -68,6 +68,17 @@ class Camera {
 				null
 			);
 		}
+
+		subject = flag;
+		pE = flag.getPoint();
+
+		brush.drawImage(
+			subject.getSprite(),
+			(int)(pE.getX()),
+			(int)(pE.getY()),
+			null
+		);
+
 		brush.dispose();
 
 		double xCoord = ((Settings.resX() / 2)) - focus.getCentreX();

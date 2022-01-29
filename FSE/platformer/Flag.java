@@ -31,7 +31,7 @@ public class Flag extends Entity {
 			// Deep-copy rectangle bounds or else when Item modifies
 			// it all other items using that bound will also be
 			// affected
-			(Rectangle2D) costumes.getBounds(type.spriteNum, 0).clone(),
+			(Rectangle2D) costumes.getBounds(0, 0).clone(),
 			null // No attributes
 		);
 

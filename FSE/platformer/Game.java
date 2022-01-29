@@ -27,12 +27,13 @@ public class Game extends JPanel implements ActionListener {
 	SpriteHandler tileHandle = null;  // tileset
 	SpriteHandler handleP1 = null;    // animations for player one
 	SpriteHandler handleItems = null; // tileset for items
-	SpriteHandler[] handleEnemies = new SpriteHandler[5]; // animations collection for enemies
+	SpriteHandler[] handleEntities = new SpriteHandler[5]; // animations collection for enemies
 
 	/* Level management */
 	Level lvl = null;
 	ArrayList<Item> items = new ArrayList<Item>();
 	ArrayList<Enemy> enemies = new ArrayList<Enemy>();
+	Flag flag;
 
 	/* Initial loading screen */
 	Font font;
@@ -306,11 +307,18 @@ public class Game extends JPanel implements ActionListener {
 		if (this.handleItems == null) { return false; }
 
 		// Load slimes
-		this.handleEnemies[0] = SpriteHandler.createFromFile(
+		this.handleEntities[0] = SpriteHandler.createFromFile(
 			this, "/resources/slime.png",
 			Settings.SLIME_WIDTH, Settings.SLIME_HEIGHT, Settings.zoom()
 		);
-		if (this.handleEnemies[0] == null) { return false; }
+		if (this.handleEntities[0] == null) { return false; }
+
+		// Load endgoal
+		this.handleEntities[1] = SpriteHandler.createFromFile(
+			this, "/resources/flags.png",
+			Settings.UNIT, Settings.UNIT, Settings.zoom()
+		);
+		if (this.handleEntities[1] == null) { return false; }
 
 		return true;
 	} /* End method loadGraphics */
@@ -334,7 +342,7 @@ public class Game extends JPanel implements ActionListener {
 		if (this.tileHandle == null) { return false; } // pics not loaded
 
 		// Only keep track of one level at a time.
-		this.lvl = new Level(this.tileHandle, this.handleEnemies, biome, Settings.zoom());
+		this.lvl = new Level(this.tileHandle, this.handleEntities, biome, Settings.zoom());
 
 		if (!this.lvl.loadFile("/resources/" + path)) {
 			return false;
@@ -412,6 +420,7 @@ public class Game extends JPanel implements ActionListener {
 		);
 
 		this.enemies = this.lvl.getEnemies();
+		this.flag = this.lvl.getFlag();
 
 		this.cam = new Camera(this.lvl.getLevel(this.tileHandle, Settings.zoom()));
 
@@ -516,6 +525,10 @@ public class Game extends JPanel implements ActionListener {
 				deathSequence = true;
 			}
 		}
+
+		if (player.isTouching(flag.getBounds())) {
+			deathSequence = true;
+		}
 	} /* End method updateEnemies */
 
 
@@ -585,7 +598,7 @@ public class Game extends JPanel implements ActionListener {
 		if (!this.running) { return; } // No more to paint; not running
 
 		Graphics2D g2d = (Graphics2D)g;
-		cam.beam(g2d, player, items, enemies, Settings.zoom());
+		cam.beam(g2d, player, items, enemies, flag, Settings.zoom());
 	} /* End method paint */
 
 } /* End class Game */
