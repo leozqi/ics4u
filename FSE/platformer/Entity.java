@@ -1,6 +1,8 @@
 // ------------------------------------------------------------------------- //
 // The Entity class stores base functionality for moving, animated sprites   //
-// displayed in levels including the player.                                 //
+// displayed in levels, including the player.                                //
+//                                                                           //
+// All methods are by author unless otherwise stated in method header.       //
 //                                                                           //
 // Package:  platformer                                                      //
 // Filename: Entity.java                                                     //
@@ -29,6 +31,8 @@ public class Entity {
 	// DelayQueue for effects
 	// The current effect is the element at head that is being peeked
 	// When the delay is over and the element is removed, it CEASES effect
+	// Effects have not currently been implemented but are present for
+	// extensibility.
 	DelayQueue<Effect> effects = new DelayQueue<Effect>();
 
 	/* Movement */
@@ -50,8 +54,8 @@ public class Entity {
 	int spriteCnt;          // Current costume of sprite
 
 	/* Time */
-	double clock = 0d; // Clock for sprite change cycles
-	double tickTime = 30d; // Time to update one tick cycle
+	double clock = 0d;      // Clock for sprite change cycles
+	double tickTime = 30d;  // Time to update one tick cycle
 
 	/**
 	 * Create a new entity.
@@ -176,49 +180,53 @@ public class Entity {
 
 
 	/**
-	 * Adjusts velocity based on acceleration for the X axis.
+	 * Adjusts velocity based on acceleration and friction for variable.
 	 *
-	 * Adds horizontal "friction" to reduce X velocity gradually, and
-	 * applies a max X velocity.
+	 * Adds "friction" to reduce specified velocity gradually and a max
+	 * velocity as a limit in both directions.
 	 *
-	 * @param diffT time adjustment between frames.
+	 * @param diffT time ajustment between frames.
+	 * @param accel acceleration value to use for adjustments.
+	 * @param vel current velocity value.
+	 * @return velocity after adjustment.
 	 */
-	public void adjustVelX(double diffT) {
-		// Positive X acceleration
-		if (this.xAccel > 0) {
-			// If x-velocity is too low to be measurable,
+	public double adjustVel(double diffT, double accel, double vel) {
+		// Positive acceleration
+		if (accel > 0) {
+			// If velocity is too low to be measurable,
 			// set it equal to MIN_SPD
-			if (this.xVel < this.minVel && this.xVel > 0) {
-				this.xVel = this.minVel;
+			if (vel < this.minVel && vel > 0) {
+				vel = this.minVel;
 
-			// If x-velocity is too high
-			} else if (this.xVel < this.maxVel) {
-				this.xVel += (diffT * this.xAccel);
+			// If velocity is too high
+			} else if (vel < this.maxVel) {
+				vel += (diffT * accel);
 			}
-		// Negative X acceleration
-		} else if (this.xAccel < 0) {
+		// Negative acceleration
+		} else if (accel < 0) {
 			// Set very small velocities equal to MIN_SPD
-			if (this.xVel > -this.minVel && this.xVel < 0) {
-				this.xVel = -this.minVel;
+			if (vel > -this.minVel && vel < 0) {
+				vel = -this.minVel;
 
-			// If x-velocity is too high
-			} else if (this.xVel > -this.maxVel) {
-				this.xVel += (diffT * this.xAccel);
+			// If velocity is too high
+			} else if (vel > -this.maxVel) {
+				vel += (diffT * accel);
 			}
 		// No acceleration; use friction
 		} else {
-			// Less than minVel; friction should stop x-velocity.
-			if (Math.abs(this.xVel) < this.minVel) {
-				this.xVel = 0;
+			// Less than minVel; friction should stop velocity.
+			if (Math.abs(vel) < this.minVel) {
+				vel = 0;
 			}
 			// Apply friction
-			if (this.xVel > 0) {
-				this.xVel -= (diffT * 0.1);
-			} else if (this.xVel < 0) {
-				this.xVel += (diffT * 0.1);
+			if (vel > 0) {
+				vel -= (diffT * 0.1);
+			} else if (vel < 0) {
+				vel += (diffT * 0.1);
 			}
 		}
-	} /* End method adjustVelX */
+		return vel;
+	} /* End method adjustVel */
 
 
 	/**
@@ -258,8 +266,10 @@ public class Entity {
 	 * |
 	 * | +y
 	 *
+	 * @param x integer number of pixels to move in x axis
+	 * @param y integer number of pixels to move in y axis
 	 */
-	public void move(double x, double y) {
+	public void move(int x, int y) {
 		synchronized (this.bounds) {
 			this.bounds.setRect(
 				this.bounds.getX() + x, // Set X Pos
@@ -274,7 +284,7 @@ public class Entity {
 	/**
 	 * Move restricting movement that intersects with shape `bounds`.
 	 *
-	 * Bounds can be any costumesape, but for this program is the Area class:
+	 * Bounds can be any Shape, but for this program is the Area class:
 	 *     java.awt.geom.Area.
 	 *
 	 * Works by gradually moving the entity one coordinate in the x and
@@ -288,17 +298,26 @@ public class Entity {
 	 *
 	 * This method is the simplest method of collision detection *and* is
 	 * more efficient than checking MANY Shapes (or each tile) individually.
+	 *
+	 * @param x integer number of pixels to move in x axis
+	 * @param y integer number of pixels to move in y axis
+	 * @param bounds collision box entity should not enter
 	 */
-	public void boundedMove(double x, double y, Shape bounds) {
-		boolean xReachedLim = false; // hit boundary in X dimension
-		boolean yReachedLim = false; // hit boundary in Y dimension
+	public void boundedMove(int x, int y, Shape bounds) {
+		// No movement; return
+		if ((x == 0) && (y == 0)) { return; }
+
+		boolean xReachedLim = (x == 0); // hit boundary in X dimension
+		boolean yReachedLim = (y == 0); // hit boundary in Y dimension
 
 		int xInc = (x > 0) ? 1 : -1; // set x increment by value
 		int yInc = (y > 0) ? 1 : -1; // set y increment by value
 
 		int cnt = 0; // how many increments have passed
 
-		while (true) {
+		// If count is greater than arbitrarily large number, exit:
+		// error in finding boundary
+		while (cnt < 1000) {
 			// Boundary not reached; requested x distance not reached
 			if (!xReachedLim && cnt < Math.abs(x)) {
 				// Increment player Rectangle x
@@ -350,9 +369,9 @@ public class Entity {
 			// is satisfied
 			if (
 				(xReachedLim && yReachedLim)
-				|| (cnt >= Math.abs(x) && cnt >= Math.abs(y))
+				|| ((cnt >= Math.abs(x)) && (cnt >= Math.abs(y)))
 			) {
-				break; // Exit loop
+				return; // Exit loop
 			}
 		} /* End while loop */
 	} /* End method boundedMove */
@@ -439,6 +458,21 @@ public class Entity {
 	public boolean isAlive()              { return this.alive;        }
 	public int getCoins()                 { return this.coin;         }
 
+
+	/**
+	 * Returns whether or not the Entity is moving at all.
+	 *
+	 * This method takes into account velocity, not acceleration, to
+	 * determine if an Entity is moving or not.
+	 *
+	 * @return true if Entity is moving; otherwise false
+	 */
+	public boolean isMoving() {
+		// If NOT both velocities are zero, is moving
+		return !((this.xVel == 0) && (this.yVel == 0));
+	} /* End method isMoving */
+
+
 	/**
 	 * Jump with a starting velocity of `vel`.
 	 *
@@ -446,8 +480,12 @@ public class Entity {
 	 * have more than one "jump" before landing.
 	 */
 	public synchronized void jump(double vel) {
-		// Allow jumping if jumpLImit has not been reached
+		// Allow jumping if jumpLimit has not been reached
 		if (jumpCnt < jumpLimit) {
+			// Play jump sound
+			// Designed to silently fail if sound does not exist
+			SoundHandler.get().playSound("SOUND_JUMP", false);
+
 			this.setVelY(vel);
 			jumpCnt++; // Increment jump count
 		}
@@ -466,4 +504,4 @@ public class Entity {
 		return false;
 	} /* End method isTouching */
 
-} /* End class Level */
+} /* End class Entity */

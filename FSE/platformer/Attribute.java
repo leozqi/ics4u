@@ -1,6 +1,8 @@
 // ------------------------------------------------------------------------- //
 // The Attribute enumeration represents properties of entities or tiles.     //
 //                                                                           //
+// All methods are by author unless otherwise stated in method header.       // 
+//                                                                           //
 // Package:  platformer                                                      //
 // Filename: Attribute.java                                                  //
 // Author:   Leo Qi                                                          //

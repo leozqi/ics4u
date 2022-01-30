@@ -2,6 +2,8 @@
 // The Level class loads levels from text files and stores level data        //
 // separate from graphics data.                                              //
 //                                                                           //
+// All methods are by author unless otherwise stated in method header.       //
+//                                                                           //
 // Package:  platformer                                                      //
 // Filename: Level.java                                                      //
 // Author:   Leo Qi                                                          //
@@ -148,6 +150,8 @@ public class Level {
 			// Read one line at a time
 			// Load biome
 			ln = stdin.readLine();
+			// No biome was provided; level is incorrectly formatted
+			if (ln == null) { return false; }
 			this.loadBiome((char)ln.codePointAt(0));
 			ln = stdin.readLine();
 
@@ -165,6 +169,11 @@ public class Level {
 		} catch (Exception e) {
 			return false; // In event of error, return error boolean
 		}
+		/* Check if level was empty */
+		if ((rowCnt == 0) || (colCnt == 0)) {
+			return false; // Empty levels are not allowed
+		}
+
 		// No more chance of error, actually change class attributes
 		this.rows = rowCnt; // Record number of rows
 		this.cols = colCnt; // Record number of columns

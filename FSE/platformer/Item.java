@@ -1,15 +1,21 @@
 // ------------------------------------------------------------------------- //
-// Represents an in-game item                                                //
+// The Item class represents an in-game item that applies a one-time effect  //
+// to the player (or potentially entities).                                  //
 //                                                                           //
-// Author:      Leo Qi                                                       //
-// Start date:  2022-01-10                                                   //
-// Finish date: 2022-01-20                                                   //
+// All methods are by author unless otherwise stated in method header.       //
+//                                                                           //
+// Package:  platformer                                                      //
+// Filename: Item.java                                                       //
+// Author:   Leo Qi                                                          //
+// Class:    ICS4U St. Denis                                                 //
+// Date due: Jan. 30, 2022.                                                  //
 // ------------------------------------------------------------------------- //
 
 package platformer;
 
 import java.awt.image.BufferedImage;
 import java.awt.geom.Rectangle2D;
+import java.util.Random;
 
 public class Item extends Entity {
 
@@ -20,7 +26,7 @@ public class Item extends Entity {
 	 * 
 	 * Items come in the form of coins for score and diamonds for effects.
 	 * The sprite of an item and the type are both convienently indicated by
-	 * the ItemType class.
+	 * the EntityType class.
 	 */
 	public Item(double x, double y, SpriteHandler costumes, EntityType type) {
 		super( // Use the constructor of base Entity for most setup
@@ -51,6 +57,40 @@ public class Item extends Entity {
 	public BufferedImage getSprite() {
 		return costumes.getTile(type.spriteNum, 0, false);
 	} /* End method getSprite */
+
+
+	/**
+	 * Create a random coin for itemboxes.
+	 *
+	 * There is a ~10% chance for a gold coin, ~20% chance for a silver coin,
+	 * and ~70% chance for a bronze coin to be returned.
+	 *
+	 * @param x real-x position of the coin to appear.
+	 * @param y real-y position of coin to appear.
+	 * @param costumes SpriteHandler with image resources to use.
+	 * @return Item created.
+	 */
+	public static Item randomCoin(double x, double y, SpriteHandler costumes) {
+		Random rand = new Random();
+
+		// Use random integer to determine coin
+		int choice = rand.nextInt(100);
+
+		EntityType type;
+		if (choice > 89) {
+			// 10% chance for gold
+			type = EntityType.G_COIN;
+		} else if (choice < 20) {
+			// 20% chance for silver
+			type = EntityType.S_COIN;
+		} else {
+			// 70% chance for bronze
+			type = EntityType.B_COIN;
+		}
+
+		return new Item(x, y, costumes, type);
+
+	} /* End method randomCoin */
 
 
 	/**

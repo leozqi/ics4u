@@ -2,6 +2,8 @@
 // The Torch class represents a flickering torch which provides a light      //
 // effect in "dark" biomes.                                                  //
 //                                                                           //
+// All methods are by author unless otherwise stated in method header.       //
+//                                                                           //
 // Package:  platformer                                                      //
 // Filename: Torch.java                                                      //
 // Author:   Leo Qi                                                          //
@@ -33,14 +35,19 @@ public class Torch extends Entity {
 		);
 		super.applyAttribute(Attribute.LIGHTING);
 
+		super.tickTime = 15d;
+		super.stationary = true;
 		this.setX(x); // Set X and Y of bounds
 		this.setY(y);
 	} /* End constructor */
 
 
+	/**
+	 * Update torch animation step.
+	 */
 	@Override
 	public void updateTick() {
-		if (spriteCnt > 1) {
+		if (spriteCnt > 0) {
 			spriteCnt = 0;
 		} else {
 			spriteCnt++;

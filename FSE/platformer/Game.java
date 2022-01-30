@@ -2,6 +2,8 @@
 // The Game class displays main menus and controls loading and updating of   //
 // levels.                                                                   //
 //                                                                           //
+// All methods are by author unless otherwise stated in method header.       //
+//                                                                           //
 // Package:  platformer                                                      //
 // Filename: Game.java                                                       //
 // Author:   Leo Qi                                                          //
@@ -18,6 +20,8 @@ import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Random;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import javax.swing.*;
@@ -39,16 +43,23 @@ public class Game extends JPanel implements ActionListener {
 	SpriteHandler handleP1    = null; // animations for player one
 
 	// Collection of SpriteHandlers for entities
+	// See EntityType for list of all types of entities
 	// [0]: Slimes
 	// [1]: Endgame flag
 	// [2]: Items
 	// [3]: Torches
 	// [4]: Flies
-	SpriteHandler[] handleEntities = new SpriteHandler[5];
+	//
+	// Set array of SpriteHandlers equal to number of types of entities
+	// (Enumeration length of EntityType
+	SpriteHandler[] handleEntities = new SpriteHandler[EntityType.values().length];
 
 	// Store previous zoom of level to determine if new graphics assets
 	// need to be loaded.
 	double prevZoom = 0;
+
+	// Smoothly darken levels
+	double darkenLvlCnt = 0;
 
 	/* Level management */
 	Level lvl = null; // Stores a level loaded into the game
@@ -97,7 +108,6 @@ public class Game extends JPanel implements ActionListener {
 		/* Layout management */
 		// Use a Java BoxLayout to correctly manage layout of Menu.
 		this.setLayout(new BoxLayout(this, BoxLayout.PAGE_AXIS));
-		this.setBackground(Settings.COLOUR_ROCK); // Constant colour
 
 		/* Window management */
 		this.frame = frame; // Keep copy of JFrame for resize functionality
@@ -116,15 +126,21 @@ public class Game extends JPanel implements ActionListener {
 			this.font = new Font(Font.DIALOG, Font.PLAIN, 18);
 		}
 
+		/* Load music */
+		// If music loading fails, all sound related functionality will
+		// fail silently as designed. Sounds are non-essential.
+		this.loadMusic();
+
 		/* Create menu */
 		this.menu = new Menu(
-			this,                                  // ActionListener
-			"Go Oust!",                            // Title
-			"Help Oust the alien reach the flag!", // Description
-			this.font,                             // Font
-			this.getLevelNames()                   // Level names to pick
+			this,                 // ActionListener
+			Settings.TITLE,       // Title
+			Settings.DESCRIPTION, // Description
+			this.font,            // Font
+			this.getLevelNames()  // Level names to pick
 		);
-		this.menu.setVisible(true);
+
+		this.showMenu();              // Show title screen menu
 
 		// Space the menu between two "horizontal glues" to centre it.
 		this.add(Box.createHorizontalGlue());
@@ -257,58 +273,123 @@ public class Game extends JPanel implements ActionListener {
 		}
 
 		// Load background tiles
+		// Current object must be passed to reference its classpath
+		// and get the correct file.
 		this.handleTile = SpriteHandler.createFromFile(
 			this, tilePath,
 			Settings.UNIT, Settings.UNIT,
 			Settings.SEP, Settings.SEP,
 			Settings.zoom(), true
 		);
+		// If loading fails for any graphics object, return fail signal
 		if (this.handleTile == null) { return false; }
 
 		// Load player animations
+		// P_WIDTH and P_HEIGHT, as well as all subsequent WIDTH and
+		// HEIGHT constants, refer to the heights of each tile within
+		// the spritesheet.
 		this.handleP1 = SpriteHandler.createFromFile(
 			this, "/resources/p1.png",
 			Settings.P_WIDTH, Settings.P_HEIGHT, Settings.zoom()
 		);
 		if (this.handleP1 == null) { return false; }
 
+		// Load entity SpriteHandler under their location stored by
+		// the EntityTypes enumeration.
+
 		// Load slimes
-		this.handleEntities[0] = SpriteHandler.createFromFile(
+		this.handleEntities[EntityType.SLIME.costume] = SpriteHandler.createFromFile(
 			this, "/resources/slime.png",
-			Settings.SLIME_WIDTH, Settings.SLIME_HEIGHT, Settings.zoom()
+			Settings.S_WIDTH, Settings.S_HEIGHT, Settings.zoom()
 		);
-		if (this.handleEntities[0] == null) { return false; }
+		if (this.handleEntities[EntityType.SLIME.costume] == null) { return false; }
 
 		// Load endgoal
-		this.handleEntities[1] = SpriteHandler.createFromFile(
+		this.handleEntities[EntityType.FLAG.costume] = SpriteHandler.createFromFile(
 			this, "/resources/flags.png",
 			Settings.UNIT, Settings.UNIT, Settings.zoom()
 		);
-		if (this.handleEntities[1] == null) { return false; }
+		if (this.handleEntities[EntityType.FLAG.costume] == null) { return false; }
 
 		// Load item resources
-		this.handleEntities[2] = SpriteHandler.createFromFile(
+		this.handleEntities[EntityType.G_COIN.costume] = SpriteHandler.createFromFile(
 			this, "/resources/items.png",
 			Settings.UNIT, Settings.UNIT, Settings.zoom()
 		);
-		if (this.handleEntities[2] == null) { return false; }
+		if (this.handleEntities[EntityType.G_COIN.costume] == null) { return false; }
 
 		// Load torches
-		this.handleEntities[3] = SpriteHandler.createFromFile(
+		this.handleEntities[EntityType.TORCH.costume] = SpriteHandler.createFromFile(
 			this, "/resources/torch.png",
 			Settings.UNIT, Settings.UNIT, Settings.zoom()
 		);
-		if (this.handleEntities[3] == null) { return false; }
+		if (this.handleEntities[EntityType.TORCH.costume] == null) { return false; }
 
 		// Load flies
-		this.handleEntities[4] = SpriteHandler.createFromFile(
+		this.handleEntities[EntityType.FLY.costume] = SpriteHandler.createFromFile(
 			this, "/resources/fly.png",
 			Settings.F_WIDTH, Settings.F_HEIGHT, Settings.zoom()
 		);
-		if (this.handleEntities[4] == null) { return false; }
+		if (this.handleEntities[EntityType.FLY.costume] == null) { return false; }
 
 		return true;
 	} /* End method loadGraphics */
+
+
+	/**
+	 * Load game music.
+	 *
+	 * This method should only be called once for the whole game. It
+	 * prepares audio resources via the `SoundHandler` class for all
+	 * game elements to use.
+	 *
+	 * @return true if successful, otherwise false.
+	 */
+	public boolean loadMusic() {
+		boolean status = true;
+
+		// If registering any sound fails, then it will return false
+		// The AND operation of true and false is false, so any
+		// one fail will lead to the whole method returning false.
+
+		// Load default theme song
+		status = status && SoundHandler.get().register(
+			"THEME_DEFAULT",
+			"theme_default.wav"
+		);
+
+		// Load title theme song
+		status = status && SoundHandler.get().register(
+			"THEME_TITLE",
+			"theme_title.wav"
+		);
+
+		// Load coin-grab sound
+		status = status && SoundHandler.get().register(
+			"SOUND_COIN",
+			"sound_coin.wav"
+		);
+
+		// Load jumping sound
+		status = status && SoundHandler.get().register(
+			"SOUND_JUMP",
+			"sound_jump.wav"
+		);
+
+		// Load sizzle sound
+		status = status && SoundHandler.get().register(
+			"SOUND_SIZZLE",
+			"sound_sizzle.wav"
+		);
+
+		// Load sound of player being hit
+		status = status && SoundHandler.get().register(
+			"SOUND_HIT",
+			"sound_hit.wav"
+		);
+
+		return status; // Return success or failure
+	} /* End method loadMusic */
 
 
 	/**
@@ -356,34 +437,45 @@ public class Game extends JPanel implements ActionListener {
 
 
 	/**
-	 * Get every level's name for display.
+	 * Get every level name for display.
 	 *
-	 * The level picker will allow selection of different levels.
+	 * This method searches the /resources/ path (in the same directory
+	 * as the classes) for level files. Level files contain information for
+	 * one level to be loaded each using the `Level` class, and end in a
+	 * file extension defined as Settings.FILE_EXT.
+	 *
+	 * The menu levelpicker uses this method to get all levels.
+	 *
+	 * @return String[] of all level filenames found, with extension.
 	 */
 	public String[] getLevelNames() {
 		// Get full path of relative path
-		URL url = this.getClass().getResource("/resources/");
+		URL url = this.getClass().getResource("/resources");
 		List<Path> files;
 		try {
 			// Use Utilities method to walk through all files in
 			// relative resource path
 			files = Utilities.findFiles(
-				Paths.get(url.getPath()),
+				url.toURI(),      // Uniform Resource Identifier
 				Settings.FILE_EXT // File extension as string
 			);
-		} catch (IOException e) {
-			// Error:
+		} catch (Exception e) {
+			// Error, simply exit
 			return null;
 		}
 
 		// Create array to return
 		String[] ret = new String[files.size()];
 
+		// Convert Path objects to Strings for display
 		for (int i = 0; i < files.size(); i++) {
 			// Display only the name for the file menu, no need
 			// for full path
 			ret[i] = files.get(i).getFileName().toString();
 		}
+
+		Arrays.sort(ret); // Sort names of levels into alphabetical order
+
 		return ret;
 	} /* End method getLevelPaths */
 
@@ -399,11 +491,31 @@ public class Game extends JPanel implements ActionListener {
 		this.renderer = null;
 		this.entities.clear();
 
-		this.setBackground(Settings.COLOUR_ROCK);
+		// Signal for garbage-collect (may not happen) to clear old
+		// level debris
+		System.gc();
 
 		this.menu.setDescription("Play again?");
-		this.menu.setVisible(true);
+		this.showMenu();
 	} /* End method exitGame */
+
+
+	/**
+	 * Show the main menu and play main menu music.
+	 *
+	 * Used at the beginning when Game is first loaded and after completion
+	 * of every level.
+	 */
+	public void showMenu() {
+		// Stop all sounds
+		SoundHandler.get().stopSounds();
+
+		this.setBackground(Settings.COLOUR_ROCK); // Customize menu background
+		this.menu.setVisible(true); // Show menu
+
+		// Play theme song
+		SoundHandler.get().playSound("THEME_TITLE", true);
+	} /* End method showMenu */
 
 
 	/**
@@ -414,13 +526,26 @@ public class Game extends JPanel implements ActionListener {
 	 */
 	public void startGame() {
 		// Set zoom of global Settings to current menu zoom
-		Settings.get().setZoom(this.menu.getCurrentZoom());
+		double currZoom = this.menu.getCurrentZoom(); // Set current zoom
+		Settings.get().setZoom(currZoom);
 
-		// Load graphics resources
-		this.loadGraphics();
+		// Load graphics resources only if needed (if zoom has changed)
+		if (currZoom != prevZoom) {
+			prevZoom = currZoom;
+			// Zoom has changed; reload graphics
+			if (!this.loadGraphics()) {
+				// Error condition:
+				this.menu.setDescription("Error loading graphics.");
+				return;
+			}
+		}
 
 		// Load selected level of menu from file
-		this.loadLevel(this.menu.getCurrentLevel());
+		if (!this.loadLevel(this.menu.getCurrentLevel())) {
+			// Error loading level
+			this.menu.setDescription("Error loading level.");
+			return;
+		}
 		// Store level width and height
 		Settings.get().setLevelWidth(this.lvl.getWidth());
 		Settings.get().setLevelHeight(this.lvl.getHeight());
@@ -428,19 +553,13 @@ public class Game extends JPanel implements ActionListener {
 		// Create player in level's starting position
 		Point2D pSpawn = this.lvl.getPlayerStart();
 		this.player = new Player(
+			pSpawn.getX(),
+			pSpawn.getY(),
 			handleP1,
-			// Starting location
-			new Rectangle2D.Double(
-				pSpawn.getX(),
-				pSpawn.getY(),
-				Settings.PLAYER_WIDTH * Settings.zoom(),
-				Settings.PLAYER_HEIGHT * Settings.zoom()
-			),
 			null // Do not apply any attributes yet
 		);
 		// Connect KeyListener of game to player
 		this.addKeyListener(player);
-
 
 		// Load entities from level
 		this.entities.addAll(this.lvl.getEntities());
@@ -451,7 +570,11 @@ public class Game extends JPanel implements ActionListener {
 		// Close menu
 		this.menu.setVisible(false);
 
+		// Stop all sounds (title theme) before level
+		SoundHandler.get().stopSounds();
+
 		// Create new running loop
+		SoundHandler.get().playSound("THEME_DEFAULT", true);
 		this.renderer = new Renderer(); // Create separate game thread
 		this.renderer.start();          // Start thread
 		this.running = true;            // Set level as running
@@ -489,7 +612,13 @@ public class Game extends JPanel implements ActionListener {
 				// Use a Runnable to update values and render to screen
 				SwingUtilities.invokeAndWait(new Updater(diffT));
 				} catch (Exception e) {
-					// If error occurs, create new frame.
+					if (e instanceof InterruptedException) {
+						// Exit thread; level stopped
+						Thread.currentThread().interrupt();
+						return;
+					}
+					// Not interrupted; other exception
+					// Just redraw frame
 					continue;
 				}
 			}
@@ -545,7 +674,7 @@ public class Game extends JPanel implements ActionListener {
 
 		/* Update clock */
 		this.clock += diffT; // add diffT to the clock
-		if (this.clock > 500 && endSequence) {
+		if (this.clock > Settings.TIME_END && endSequence) {
 			// After player dies or wins, there is a countdown until
 			// level exits to main menu
 			exitGame();
@@ -554,15 +683,38 @@ public class Game extends JPanel implements ActionListener {
 		/* Get areas to use to update entities */
 		Shape bounds = this.lvl.getBounds();       // get impassable areas
 		Shape climbable = this.lvl.getClimbable(); // get climbable areas
+		Shape deadly = this.lvl.getDeadly();       // get deadly areas
 
 		/* Update player */
 		// Update player first, then other entities in order of precedence
-		player.update(diffT, bounds, climbable);
-		checkHittingBox(); // check if player hit box (dynamically create items)
+		if (!player.isAlive() && !this.endSequence) {
+			// Do not keep resetting end sequence if already set
+			this.beginEndSequence();
+		} else {
+			player.update(diffT, bounds, climbable, deadly);
+		}
+
+		// Check if player hit item box (dynamically create items)
+		checkHittingBox();
 
 		/* Update other entities */
-		updateEntities(diffT, bounds);
+		updateEntities(diffT, bounds, deadly);
 	} /* End method update */
+
+
+	/**
+	 * Begin end screen of either victory or death for player.
+	 *
+	 * Resets the clock of the level to display the message for n ticks.
+	 * The update loop will exit to the main menu after that time.
+	 */
+	public void beginEndSequence() {
+		// Already set; no need to do it again
+		if (this.endSequence) { return; }
+
+		this.clock = 0d;
+		this.endSequence = true;
+	} /* End method beginEndSequence */
 
 
 	/**
@@ -571,8 +723,9 @@ public class Game extends JPanel implements ActionListener {
 	 * @param diffT "difference in time" time adjustment per frame.
 	 * @param bounds level collision boxes for entities to be aware of and
 	 *               which entities should not go into.
+	 * @param deadly level collision boxes for areas deadly to entities.
 	 */
-	public void updateEntities(double diffT, Shape bounds) {
+	public void updateEntities(double diffT, Shape bounds, Shape deadly) {
 		Entity ent; // Store the current entity during iteration.
 
 		// Store entities to be removed in an array
@@ -584,31 +737,36 @@ public class Game extends JPanel implements ActionListener {
 			ent = this.entities.get(i); // get entity from level
 			ent.update(diffT, bounds);  // update all entities
 
-			/* Check if entity is alive or not */
-			if (!ent.isAlive()) {
+			if ((!ent.isAlive()) || deadly.intersects(ent.getBounds())) {
+				// If Entity is touching deadly area or
+				// Entity is dead, remove from level
 				toRemove[toRemoveCnt++] = ent;
 				continue; // Skip to next entity
 			}
 
+			// `instanceof` checks if Entity is further a member
+			// of a specific Entity subclass
 			if (ent instanceof Enemy) {
 				/* Handle enemy-specific updates */
 				// If player touching enemy, player dies.
 				if (player.isTouching(ent.getBounds())) {
+					// Play hitting sound
+					SoundHandler.get().playSound("SOUND_HIT", false);
 					player.die();
-					this.clock = 0;
-					endSequence = true;
+					this.beginEndSequence(); // End level
 				}
 			} else if (ent instanceof Flag) {
 				/* Handle flag-specific updates */
 				if (player.isTouching(ent.getBounds())) {
 					// Player win condition
-					this.clock = 0;
-					endSequence = true;
+					this.beginEndSequence(); // End level
 				}
 			} else if (ent instanceof Item) {
 				/* Handle item-specific updates */
 				Item item = (Item) ent;
 				if (item.isTouching(player.getBounds())) {
+					// Play application sound
+					SoundHandler.get().playSound("SOUND_COIN", false);
 					// Apply item attribute to player
 					player.applyAttribute(item.getAttribute());
 					// Item is expended
@@ -620,7 +778,10 @@ public class Game extends JPanel implements ActionListener {
 		// Remove any items queued
 		if (toRemoveCnt > 0) {
 			for (Entity removable : toRemove) {
-				this.entities.remove(removable);
+				// Removable may be empty
+				if (removable != null) {
+					this.entities.remove(removable);
+				}
 			}
 		}
 	} /* End method updateEntities */
@@ -638,24 +799,26 @@ public class Game extends JPanel implements ActionListener {
 
 		// Check if box contains point right above player's head.
 		// If box does contain point, remove box
+		// Settings.P_SPACE contains location above player's head used
 		Area boxLocation = (Area) boxes.containsRemove(
 			player.getCentreX(),
-			player.getPoint().getY() - 5
+			player.getPoint().getY() - Settings.P_SPACE
 		);
 
 		if (boxLocation == null) {
-			// Player didn't hit any box with head
+			// Player didn't hit any box with head; exit
 			return;
 		}
+		// Player did hit item box. Get and store coordinates from box.
+		Rectangle2D bounds = boxLocation.getBounds2D();
 
-		// Get and store coordinates from location
-		Rectangle2D.Double bounds = (Rectangle2D.Double) boxLocation.getBounds2D();
+		// Create random coin at location
+		entities.add(Item.randomCoin(
+			bounds.getX(), // X coordinates
 
-		// Create item from location
-		entities.add(new Item(
-			bounds.getX(),
-			bounds.getY()-(Settings.UNIT*Settings.zoom()),
-			handleEntities[2], EntityType.HEALTH
+			// Y coordinate is equal to one unit higher than item box
+			bounds.getY() - (Settings.UNIT * Settings.zoom()),
+			handleEntities[EntityType.G_COIN.costume] // Coin sprite
 		));
 	} /* End method checkHittingBox */
 
@@ -664,7 +827,19 @@ public class Game extends JPanel implements ActionListener {
 	 * Draw frame with updated positions.
 	 *
 	 * Uses the Camera class to scale and adjust camera angles with
-	 * entities.
+	 * entities. The Camera will first use the image of the level it already
+	 * has calculated as a base, then layer on top entities, the player,
+	 * a potential darkening effect, and any text to display.
+	 *
+	 * The darkening effect is controlled by the Biome; currently, the
+	 * "Rocky" or cave biome has the darkening effect. Darkening allows
+	 * the player to only see themselves and a few other lit locations on
+	 * the map unless they die or they complete the level for interesting
+	 * effects. Darkening is applied gradually at start so players may see a
+	 * sneek peak of the level.
+	 *
+	 * During the "end sequence" when the player is dead or has completed
+	 * the level, a message is shown by the Camera.
 	 */
 	@Override
 	public void paint(Graphics g) {
@@ -684,16 +859,24 @@ public class Game extends JPanel implements ActionListener {
 			darken = true;
 		}
 
-		// Display level and entities
-		cam.beam(g2d, player, entities, Settings.zoom(), darken);
+		// Amount to darken level by (Max 255 per colour space
+		double darkenLvl = (int)(Math.min(this.clock, 255));
+
+		// Display level and entities (With potential darkening effect)
+		cam.beam(g2d, player, entities, Settings.zoom(), darken, darkenLvl);
+
+		// Show scores
 		cam.showScore(g2d, this.font.deriveFont(40f), player.getCoins());
 
+		String msg;
 		if (endSequence) {
+			// Change message based on player status
 			if (this.player.isAlive()) {
-				cam.showMsg(g2d, this.font.deriveFont(80f), "Victory!");
+				msg = "You win!";
 			} else {
-				cam.showMsg(g2d, this.font.deriveFont(80f),"You died");
+				msg = "Game over!";
 			}
+			cam.showMsg(g2d, this.font.deriveFont(Settings.FONT_LARGE), msg);
 		}
 	} /* End method paint */
 

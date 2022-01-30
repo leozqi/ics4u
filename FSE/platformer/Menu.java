@@ -2,6 +2,8 @@
 // The Menu class builds a menu with controls for the start screen.          //
 // levels.                                                                   //
 //                                                                           //
+// All methods are by author unless otherwise stated in method header.       //
+//                                                                           //
 // Package:  platformer                                                      //
 // Filename: Menu.java                                                       //
 // Author:   Leo Qi                                                          //
@@ -68,6 +70,9 @@ public class Menu extends JPanel {
 		this.descrip = new JLabel(descrip);
 		this.descrip.setFont(dialogFont);
 
+		JLabel controls = new JLabel(Settings.CONTROLS);
+		controls.setFont(dialogFont);
+
 		/* Settings block */
 		// Create "pick a level" descriptor
 		JLabel selDescrip = new JLabel("Pick a level:");
@@ -120,6 +125,7 @@ public class Menu extends JPanel {
 			lay.createParallelGroup(GroupLayout.Alignment.CENTER)
 			.addComponent(this.title)             // Title
 			.addComponent(this.descrip)           // Message description
+			.addComponent(controls)               // How to play
 			.addGroup(lay.createSequentialGroup()
 				.addComponent(selDescrip)     // "Pick a level"
 				.addComponent(this.lvlSelect) // List of levels
@@ -151,6 +157,7 @@ public class Menu extends JPanel {
 				Short.MAX_VALUE   // No limit on max size
 			)
 			.addComponent(this.descrip)
+			.addComponent(controls)
 			.addPreferredGap(
 				LayoutStyle.ComponentPlacement.RELATED,
 				GroupLayout.DEFAULT_SIZE,

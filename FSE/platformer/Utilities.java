@@ -1,9 +1,14 @@
 // ------------------------------------------------------------------------- //
-// Stores different utilities used throughout the program.                   //
+// The Utilities class stores a set of useful static methods used throughout //
+// the platformer program not tied to any particular type of object.         //
 //                                                                           //
-// Author:      Leo Qi                                                       //
-// Start date:  2022-01-18                                                   //
-// Finish date: 2022-01-18                                                   //
+// All methods are by author unless otherwise stated in method header.       //
+//                                                                           //
+// Package:  platformer                                                      //
+// Filename: Utilities.java                                                  //
+// Author:   Leo Qi                                                          //
+// Class:    ICS4U St. Denis                                                 //
+// Date due: Jan. 30, 2022.                                                  //
 // ------------------------------------------------------------------------- //
 
 package platformer;
@@ -15,9 +20,11 @@ import java.awt.geom.Rectangle2D;
 
 import java.nio.file.*;
 import java.util.List;
+import java.util.Collections;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.io.IOException;
+import java.net.URI;
 
 public class Utilities {
 
@@ -33,10 +40,10 @@ public class Utilities {
 	 * Strip all transparent space from tile bounding box for collision checks.
 	 *
 	 * This method is much better than a rectangular bounding box for objects
-	 * that are NOT round.
+	 * that are not rectangular or square.
 	 *
-	 * Iteration of a BufferedImage pixel by pixel was adapted
-	 * (and considerably simplified) from an answer here:
+	 * Iteration of a BufferedImage pixel by pixel was adapted (and
+	 * considerably simplified) from an answer here:
 	 *
 	 * <https://stackoverflow.com/a/19486347>.
 	 *
@@ -119,11 +126,12 @@ public class Utilities {
 	 * improper types (according to Java, at least). Some PNG files return
 	 * a type of zero after being read by Java's ImageIO library which
 	 * causes an error when using that type to flip an image. This error
-	 * and potential solutions were discussed here:
+	 * and potential solutions were referenced from discussions here:
 	 *
 	 * <https://stackoverflow.com/q/5836128>
 	 *
-	 * This method uses a default type of TYPE_INT_ARGB to deal such PNG files.
+	 * This method uses a default type of TYPE_INT_ARGB to deal with such
+	 * PNG files.
 	 *
 	 * @param bi BufferedImage to flip.
 	 * @return BufferedImage flipped image.
@@ -227,15 +235,17 @@ public class Utilities {
 	 *
 	 * Slight modification: changed final walk function to simply return
 	 * the Path object as opposed to a string for further processing.
+	 *
+	 * @param uri resource identifier of directory.
+	 * @param extension file extension to search for.
+	 *
+	 * @return list of paths
 	 */
 	public static List<Path> findFiles(
-		Path path, String extension) throws IOException {
-		// Cannot look through a file for files!
-		if (!Files.isDirectory(path)) {
-			throw new IllegalArgumentException(
-				"Path must be a directory."
-			);
-		}
+		URI uri, String extension) throws IOException {
+
+		String stringPath = Paths.get(uri).toString();
+		Path path = Paths.get(stringPath);
 
 		List<Path> ret;
 

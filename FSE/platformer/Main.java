@@ -2,6 +2,8 @@
 // The Main class loads the main window and creates the Game class to start  //
 // the game.                                                                 //
 //                                                                           //
+// All methods are by author unless otherwise stated in method header.       //
+//                                                                           //
 // Package:  platformer                                                      //
 // Filename: Main.java                                                       //
 // Author:   Leo Qi                                                          //

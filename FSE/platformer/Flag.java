@@ -1,6 +1,8 @@
 // ------------------------------------------------------------------------- //
 // The Flag class represents the endgame goal for a level.                   //
 //                                                                           //
+// All methods are by author unless otherwise stated in method header.       //
+//                                                                           //
 // Package:  platformer                                                      //
 // Filename: Flag.java                                                       //
 // Author:   Leo Qi                                                          //
@@ -25,11 +27,7 @@ public class Flag extends Entity {
 		super( // Use the constructor of base Entity for most setup
 			costumes,       // SpriteHandler for costumes
 
-			// Get how big the item is as a Rectangle
-
-			// Deep-copy rectangle bounds or else when Item modifies
-			// it all other items using that bound will also be
-			// affected
+			// Get hitbox based on flag costume
 			(Rectangle2D) costumes.getBounds(0, 0).clone(),
 			null // No attributes
 		);
@@ -64,4 +62,4 @@ public class Flag extends Entity {
 		return costumes.getTile(spriteCnt, 0, false);
 	} /* End method getSprite */
 
-} /* End class Item */
+} /* End class Flag */

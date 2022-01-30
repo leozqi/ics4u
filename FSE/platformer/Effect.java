@@ -1,5 +1,7 @@
 // ------------------------------------------------------------------------- //
 // The Effect class represents timed effects that may be applied to entities.//
+// As of the submission date no effects have been implemented using this     //
+// class. It is submitted for completeness.                                  //
 //                                                                           //
 // Package:  platformer                                                      //
 // Filename: Effect.java                                                     //

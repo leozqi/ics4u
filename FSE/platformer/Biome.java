@@ -1,6 +1,8 @@
 // ------------------------------------------------------------------------- //
 // The Biome enumeration represents different themes of a level              //
 //                                                                           //
+// All methods are by author unless otherwise stated in method header.       //
+//                                                                           //
 // Package:  platformer                                                      //
 // Filename: Biome.java                                                      //
 // Author:   Leo Qi                                                          //

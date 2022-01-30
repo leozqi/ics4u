@@ -1,6 +1,8 @@
 // ------------------------------------------------------------------------- //
 // The Enemy class represents various enemies as Entities on the map.        //
 //                                                                           //
+// All methods are by author unless otherwise stated in method header.       //
+//                                                                           //
 // Package:  platformer                                                      //
 // Filename: Enemy.java                                                      //
 // Author:   Leo Qi                                                          //
@@ -20,14 +22,21 @@ import java.awt.geom.*;
 
 public class Enemy extends Entity {
 
-	double speed = 1d; // Speed of entity as constant velocity.
+	double speed = 1d; // Default speed of entity as constant velocity.
 	EntityType type;
 
 	/**
 	 * Create an enemy at real coordinates X and Y.
 	 *
+	 * Enemies are deadly to the player, who only has one health. Currently
+	 * two have been implemented, slime and fly, using this same class.
+	 * The slime is a ground-moving enemy affected by gravity. The fly is
+	 * a flying enemy not affected by gravity. Both move side to side.
+	 *
 	 * Enemies cannot be killed by the player due to gameplay reasons; it
-	 * would make the game easier.
+	 * would make the game easier. However, if they drop below level limits
+	 * or come into contact with deadly objects, they are marked dead and
+	 * removed from the level.
 	 *
 	 * @param entity type of the entity
 	 * @param x real-x position of the entity on the level map.
@@ -53,7 +62,7 @@ public class Enemy extends Entity {
 			),
 			attrs      // Additional applied attributes
 		);
-		this.type = entity;
+		this.type = entity; // Set type of enemy
 
 		// Change speed and tick-time depending on enemy type
 		switch(this.type) {
@@ -103,8 +112,8 @@ public class Enemy extends Entity {
 		// This method is common to all entities.
 		// Apply an adjustment of time per frame and Zoom factor.
 		super.boundedMove(
-			diffT * this.xVel * Settings.zoom(),
-			diffT * this.yVel * Settings.zoom(),
+			(int)(diffT * this.xVel * Settings.zoom()),
+			(int)(diffT * this.yVel * Settings.zoom()),
 			bounds
 		);
 
@@ -161,4 +170,4 @@ public class Enemy extends Entity {
 		return costumes.getTile(spriteCnt, 0, super.isMovingLeft());
 	} /* End method getSprite */
 
-} /* End class Level */
+} /* End class Enemy */

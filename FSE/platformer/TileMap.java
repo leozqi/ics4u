@@ -1,6 +1,8 @@
 // ------------------------------------------------------------------------- //
 // The TileMap class stores "per-tile" data of a current level.              //
 //                                                                           //
+// All methods are by author unless otherwise stated in method header.       //
+//                                                                           //
 // Package:  platformer                                                      //
 // Filename: TileMap.java                                                    //
 // Author:   Leo Qi                                                          //

@@ -1,6 +1,8 @@
 // ------------------------------------------------------------------------- //
 // The EntityType enumeration represents the different entities possible.    //
 //                                                                           //
+// All methods are by author unless otherwise stated in method header.       //
+//                                                                           //
 // Package:  platformer                                                      //
 // Filename: EntityType.java                                                 //
 // Author:   Leo Qi                                                          //

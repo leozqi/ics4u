@@ -2,6 +2,8 @@
 // The Camera class renders game elements onto the main JPanel with more     //
 // control.                                                                  //
 //                                                                           //
+// All methods are by author unless otherwise stated in method header.       //
+//                                                                           //
 // Package:  platformer                                                      //
 // Filename: Camera.java                                                     //
 // Author:   Leo Qi                                                          //
@@ -32,7 +34,7 @@ public class Camera {
 	 *
 	 * A Camera first renders the base level as one image stored in the
 	 * `map` field. Then, entities and the player are drawn on top each
-	 * frame.
+	 * frame. This way, the rendering cost of the level itself is small.
 	 *
 	 * @param lvlMap base image of the level.
 	 */
@@ -56,10 +58,12 @@ public class Camera {
 	 * @param zoom zoom of the level.
 	 * @param darken whether or not the level should be darkened, and
 	 *               light effects applied to light sources.
+	 * @param darkenLvl if darkening is applied, how transparent the dark
+	 *                  layer should be.
 	 */
 	public void beam(
 		Graphics2D g2d, Entity focus, ArrayList<Entity> entities,
-		double zoom, boolean darken
+		double zoom, boolean darken, double darkenLvl
 	) {
 		// Copy image used to display the level as otherwise painted
 		// entities will be duplicated on subsequent frames.
@@ -81,10 +85,13 @@ public class Camera {
 			subject = entities.get(i);   // Get subject from list
 			loc = subject.getPoint();    // Get point from subject
 
+			// If entity should light up, keep track of its position
 			if (subject.getAttributes().contains(Attribute.LIGHTING)) {
+				// Add centre of entity to list of all points
+				// with light effect
 				lightSources[lightCnt++] = new Point2D.Double(
-					subject.getBounds().getCenterX(),
-					subject.getBounds().getCenterY()
+					subject.getCentreX(),
+					subject.getCentreY()
 				);
 			}
 
@@ -99,9 +106,10 @@ public class Camera {
 
 		/* Draw `focus`: centred entity */
 		loc = focus.getPoint();
+		// Keep track of player; player needs light too
 		lightSources[lightCnt++] = new Point2D.Double(
-			focus.getBounds().getCenterX(),
-			focus.getBounds().getCenterY()
+			focus.getCentreX(),
+			focus.getCentreY()
 		);
 		brush.drawImage(
 			focus.getSprite(), // BufferedImage of focus
@@ -110,37 +118,14 @@ public class Camera {
 			null
 		);
 
-
 		if (darken) {
-			BufferedImage dark = new BufferedImage(
-				(int)Settings.levelWidth(), (int)Settings.levelHeight(),
-				BufferedImage.TYPE_INT_ARGB
+			// Apply darkness overlay
+			BufferedImage overlay = this.applyDarkening(
+				lightSources, lightCnt, darkenLvl
 			);
-
-			Graphics2D pan = dark.createGraphics();
-			pan.setPaint(new Color(0, 0, 0, 255));
-			pan.fill(new Rectangle2D.Double(0, 0, Settings.levelWidth(),
-						Settings.levelHeight()));
-			pan.setPaintMode();
-			pan.setComposite(AlphaComposite.getInstance(AlphaComposite.DST_ATOP));
-			for (int light = 0; light < lightCnt; light++) {
-				Point2D centre = lightSources[light];
-				float radius = (float)(120 * Settings.zoom());
-				RadialGradientPaint rgp = new RadialGradientPaint(
-					centre, radius,
-					new float[] {0f, 1f}, new Color[] {
-					new Color(0, 0, 0, 0), new Color(0, 0, 0, 150)
-				});
-				pan.setPaint(rgp);
-				pan.fill(new Ellipse2D.Double(centre.getX() - radius, centre.getY() - radius, radius * 2, radius * 2));
-			}
-
-			pan.dispose();
-			brush.drawImage(dark, 0, 0, null);
+			brush.drawImage(overlay, 0, 0, null);
 		}
-
 		brush.dispose(); // Free brush; finished using it
-
 
 		// Scale X and Y to viewports.
 		double xCoord = ((Settings.resX() / 2)) - focus.getCentreX();
@@ -168,6 +153,90 @@ public class Camera {
 
 
 	/**
+	 * Create a darkening overlay for graphics effects.
+	 *
+	 * The overlay consists of a dark black rectangle with transparent
+	 * gradients applied so that there is an illusion of light within the
+	 * level. Gradients are applied with the RadialGradientPaint object:
+	 *
+	 * <https://docs.oracle.com/javase/8/docs/api/java/awt/RadialGradientPaint.html>
+	 *
+	 * Gradients were then painted onto the rectangle with the use of a custom
+	 * AlphaComposite rule that would replace pixels of the rectangle with
+	 * transparent pixels:
+	 *
+	 * <https://docs.oracle.com/javase/7/docs/api/java/awt/AlphaComposite.html>
+	 *
+	 * No code was directly taken from any docs to make this method.
+	 *
+	 * @param lightSources points of light on the level.
+	 * @param lightCnt number of points of light on level.
+	 * @param darkenLvl amount to darken the level by.
+	 * @return BufferedImage overlay to apply.
+	 */
+	public BufferedImage applyDarkening(
+		Point2D[] lightSources, int lightCnt, double darkenLvl
+	) {
+		// Create BufferedImage to apply overlay effect onto.
+		BufferedImage overlay = new BufferedImage(
+			(int)Settings.levelWidth(),  // Level width
+			(int)Settings.levelHeight(), // Level height
+			BufferedImage.TYPE_INT_ARGB  // Default type with alpha (transparency)
+		);
+
+		// Paint on the overlay
+		Graphics2D g2d = overlay.createGraphics();
+
+		// Apply black colour; transparency is set by darkenLvl, 255 being opaque
+		g2d.setPaint(new Color(0, 0, 0, (int)(darkenLvl)));
+
+		// Create dark rectangle
+		g2d.fill(new Rectangle2D.Double(
+			0, 0,                   // X, Y
+			Settings.levelWidth(),  // Same as level width
+			Settings.levelHeight()) // Same as level height
+		);
+
+		if (darkenLvl < Settings.COLOUR_GRADIENT.getAlpha()) {
+			g2d.dispose();  // Finished
+			return overlay; // Not dark enough for torch circles
+		}
+
+		// Enable overlaying transparent paint atop of rectangle through blending
+		g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.DST_ATOP));
+
+		// Iterate over all light sources and apply radial gradient paint
+		// for light effect:
+		for (int num = 0; num < lightCnt; num++) {
+			// Centre of light effect application
+			Point2D centre = lightSources[num];
+
+			float radius = (float)(Settings.brightness() * Settings.zoom());
+
+			// Create new Radial Gradient Paint
+			RadialGradientPaint rgp = new RadialGradientPaint(
+				centre, radius, // Centre and radius of circle
+				new float[] {0f, 1f}, // Only two colours
+				new Color[] {
+					new Color(0, 0, 0, 0),   // Transparent
+					Settings.COLOUR_GRADIENT // Almost opaque
+				}
+			);
+
+			// Apply gradient to BufferedImage as a circle
+			g2d.setPaint(rgp);
+			g2d.fill(new Ellipse2D.Double(
+				centre.getX()-radius, // Top-left corner
+				centre.getY()-radius, // Top-left corner
+				radius * 2, radius *2 // Diameter = r * 2
+			));
+		}
+		g2d.dispose(); // Finished
+		return overlay;
+	} /* End method applyDarkening */
+
+
+	/**
 	 * Draw a message directly onto a rendering element.
 	 *
 	 * This element could be a BufferedImage or a Swing component via a
@@ -188,7 +257,7 @@ public class Camera {
 		Rectangle2D fontArea = fm.getStringBounds(msg, g2d);
 
 		float xPos = (float) ((Settings.resX() / 2) - fontArea.getCenterX());
-		float yPos = (float) ((Settings.resY() / 2) - fontArea.getCenterY());
+		float yPos = (float) ((Settings.resY() / 2) - fontArea.getMaxY());
 
 		g2d.drawString(msg, xPos, yPos);
 	} /* End method showMsg */
