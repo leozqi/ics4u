@@ -43,9 +43,16 @@ public class Game extends JPanel implements ActionListener {
 	// [1]: Endgame flag
 	// [2]: Items
 	// [3]: Torches
-	SpriteHandler[] handleEntities = new SpriteHandler[4];
+	// [4]: Flies
+	SpriteHandler[] handleEntities = new SpriteHandler[5];
 
+	// Store previous zoom of level to determine if new graphics assets
+	// need to be loaded.
+	double prevZoom = 0;
+
+	/* Level management */
 	Level lvl = null; // Stores a level loaded into the game
+	// Store entities in the level (moving sprites)
 	ArrayList<Entity> entities = new ArrayList<Entity>();
 
 	/* Initial loading screen */
@@ -53,20 +60,44 @@ public class Game extends JPanel implements ActionListener {
 	Menu menu;                   // Menu displayed at start
 
 	/* Game */
-	Camera cam = null;
-	boolean running = false;
-	private double clock = 0d;
-	boolean endSequence = false;
-	Player player = null;
-	Renderer renderer;
+	Camera cam = null;           // Camera draws game elements onto JPanel
+	boolean running = false;     // Whether or not a level is currently running
+	private double clock = 0d;   // Timer to keep track of constant game events
+	boolean endSequence = false; // Begin exiting level and displaying end msg
+	Player player = null;        // Keep track of player
+	Renderer renderer;           // Renderer provides separate game loop thread
 
-	Frame frame;
+	Frame frame;                 // Store outer window containing Game.
 
+	/**
+	 * The Game object manages initial loading of filesystem resources and
+	 * controls the main game loop of levels.
+	 *
+	 * During initial creation of a Game, a main menu is shown with the Menu
+	 * class. Menu items are accessed through various Menu methods, while
+	 * a Menu communicates actions like starting the game to the Game by
+	 * registering the Game as an ActionListener.
+	 *
+	 * The background of the Game is set as dark while the background of the
+	 * inner Menu is kept as default so that the menu's items can be clearly
+	 * distinguished from extra space. BoxLayout documentation was used to
+	 * set "horizontal glue" to centre the menu.
+	 *
+	 * <https://docs.oracle.com/javase/8/docs/api/javax/swing/BoxLayout.html>
+	 *
+	 * The entire Game window is fully resizable thanks to a ComponentAdapter
+	 * that listens for these events, and changes the viewport width and
+	 * height accordingly. These values are kept track of at all times in
+	 * the Settings singleton class; they are used by the Camera class to
+	 * resize the game's display while it is being played.
+	 *
+	 * @param frame Frame of parent window JFrame for resizing purposes.
+	 */
 	public Game(Frame frame) {
-		super();
-
+		/* Layout management */
+		// Use a Java BoxLayout to correctly manage layout of Menu.
 		this.setLayout(new BoxLayout(this, BoxLayout.PAGE_AXIS));
-		this.setBackground(Settings.COLOUR_ROCK);
+		this.setBackground(Settings.COLOUR_ROCK); // Constant colour
 
 		/* Window management */
 		this.frame = frame; // Keep copy of JFrame for resize functionality
@@ -79,19 +110,23 @@ public class Game extends JPanel implements ActionListener {
 		this.setPreferredSize(new Dimension(Settings.resX(), Settings.resY()));
 		this.setFocusable(true);
 
+		/* Load fonts */
 		if (!this.loadFonts()) { // Load required fonts for menu
 			// Font loading failed, use default
 			this.font = new Font(Font.DIALOG, Font.PLAIN, 18);
 		}
 
+		/* Create menu */
 		this.menu = new Menu(
-			this,
-			"Go Oust!",
-			"Help Oust the alien reach the flag!",
-			this.font,
-			this.getLevelNames()
+			this,                                  // ActionListener
+			"Go Oust!",                            // Title
+			"Help Oust the alien reach the flag!", // Description
+			this.font,                             // Font
+			this.getLevelNames()                   // Level names to pick
 		);
 		this.menu.setVisible(true);
+
+		// Space the menu between two "horizontal glues" to centre it.
 		this.add(Box.createHorizontalGlue());
 		this.add(this.menu);
 		this.add(Box.createHorizontalGlue());
@@ -101,41 +136,71 @@ public class Game extends JPanel implements ActionListener {
 	/**
 	 * Loads fonts used by the start menu and HUD.
 	 *
+	 * The font used within the game is Super Mario 256, a free-to-use font
+	 * located in the /resources/ path relative to the classpath. This method
+	 * loads that font (or any other font) as a TrueType font located at the
+	 * "font.ttf" resources path.
+	 *
 	 * @return true if operation completed successfully, else false
 	 */
 	public boolean loadFonts() {
 		try {
+			// Attempt to load font file
 			URL url = this.getClass().getResource("/resources/font.ttf");
+			if (url == null) { return false; } // Path invalid; fail
 
-			if (url == null) { return false; }
-
+			// Create font based on file
 			this.font = Font.createFont(
 				Font.TRUETYPE_FONT,
 				new File(url.toURI())
 			);
 		} catch (Exception e) {
-			e.printStackTrace();
-			return false;
+			return false; // Font file invalid
 		}
-		return true;
+		return true; // Success
 	} /* End method loadFonts */
 
 
+	/**
+	 * Provides resize functionality by notifying other game components
+	 * when the window has been modified.
+	 *
+	 * This class accomplishes this by modifying two global fields contained
+	 * in the Settings singleton class, `resX` and `resY`. These represent
+	 * the width and height of the new screen respectively.
+	 */
 	class ResizeListener extends ComponentAdapter {
 
+		/**
+		 * Called whenever a component is resized.
+		 *
+		 * For the purposes of this class, that component is the main
+		 * window.
+		 */
 		@Override
 		public void componentResized(ComponentEvent componentEvent) {
+			// Get Settings singleton; set ResX and ResY
+			// based on new width and height of JFrame
 			Settings.get().setResX(Game.this.frame.getWidth());
 			Settings.get().setResY(Game.this.frame.getHeight());
+
+			// Set preferred size of JPanel equal to size of JFrame
 			Game.this.setPreferredSize(new Dimension(
 				Settings.resX(),
 				Settings.resY()
 			));
 
 			if (!Game.this.running) {
+				// Repaint for menu objects if Game is NOT
+				// running; if game is running, the paint method
+				// automatically takes care of scaling.
+				//
+				// However, if Game is NOT running there is no
+				// other thread to handle this, so it should
+				// be done on each resize.
 				repaint();
 			}
-		}
+		} /* End method componentResized */
 
 	} /* End class ResizeListener */
 
@@ -145,7 +210,9 @@ public class Game extends JPanel implements ActionListener {
 	 * Game's state.
 	 *
 	 * The start button of the main menu is tied to this method; pressing
-	 * the start button starts the game via this method.
+	 * it starts the game via this method. Between the time a level is loaded
+	 * there is a small wait, which this method notifies the user of with
+	 * the Menu.setDescription method.
 	 *
 	 * @param event Event to be processed
 	 */
@@ -154,6 +221,8 @@ public class Game extends JPanel implements ActionListener {
 		// Not start button; return
 		if (!(event.getActionCommand() == "start")) { return; }
 
+		// Give indicator to user that game is loading before level
+		// shows
 		this.menu.setDescription("Loading . . .");
 
 		try {
@@ -166,8 +235,6 @@ public class Game extends JPanel implements ActionListener {
 				}
 			});
 		} catch (Exception err) {} // If fail, ignore button / command
-
-		this.menu.setDescription("Loading . . .");
 	} /* End method actionPerformed */
 
 
@@ -180,6 +247,8 @@ public class Game extends JPanel implements ActionListener {
 	 * @return true if operation completed successfully, else false.
 	 */
 	public boolean loadGraphics() {
+		// There are three files for three different tile zoom levels.
+		// Load the appropriate one for the seelected zoom.
 		String tilePath = "/resources/tiles-100.png";
 		if (Settings.zoom() == 2) {
 			tilePath = "/resources/tiles-200.png";
@@ -231,6 +300,13 @@ public class Game extends JPanel implements ActionListener {
 		);
 		if (this.handleEntities[3] == null) { return false; }
 
+		// Load flies
+		this.handleEntities[4] = SpriteHandler.createFromFile(
+			this, "/resources/fly.png",
+			Settings.F_WIDTH, Settings.F_HEIGHT, Settings.zoom()
+		);
+		if (this.handleEntities[4] == null) { return false; }
+
 		return true;
 	} /* End method loadGraphics */
 
@@ -254,9 +330,9 @@ public class Game extends JPanel implements ActionListener {
 
 		// Only keep track of one level at a time.
 		this.lvl = new Level(
-			this.handleTile,
-			this.handleEntities,
-			Settings.zoom()
+			this.handleTile,     // Tile spritesheet
+			this.handleEntities, // Entity array spritesheet
+			Settings.zoom()      // Zoom level of Settings
 		);
 
 		// Have the level class load the file specified at path
@@ -312,6 +388,11 @@ public class Game extends JPanel implements ActionListener {
 	} /* End method getLevelPaths */
 
 
+	/**
+	 * Exit the current level.
+	 *
+	 * Exit the current level and display a message asking to play again.
+	 */
 	private void exitGame() {
 		this.running = false;
 		this.renderer.interrupt();
@@ -322,21 +403,32 @@ public class Game extends JPanel implements ActionListener {
 
 		this.menu.setDescription("Play again?");
 		this.menu.setVisible(true);
-	} /* End method newGame */
+	} /* End method exitGame */
 
 
+	/**
+	 * Start the selected level.
+	 *
+	 * Start the selected level by loading it from a file, along with
+	 * image resources.
+	 */
 	public void startGame() {
+		// Set zoom of global Settings to current menu zoom
 		Settings.get().setZoom(this.menu.getCurrentZoom());
+
+		// Load graphics resources
 		this.loadGraphics();
 
+		// Load selected level of menu from file
 		this.loadLevel(this.menu.getCurrentLevel());
-
-		Point2D pSpawn = this.lvl.getPlayerStart();
+		// Store level width and height
 		Settings.get().setLevelWidth(this.lvl.getWidth());
 		Settings.get().setLevelHeight(this.lvl.getHeight());
 
+		// Create player in level's starting position
+		Point2D pSpawn = this.lvl.getPlayerStart();
 		this.player = new Player(
-			5, handleP1,
+			handleP1,
 			// Starting location
 			new Rectangle2D.Double(
 				pSpawn.getX(),
@@ -344,30 +436,41 @@ public class Game extends JPanel implements ActionListener {
 				Settings.PLAYER_WIDTH * Settings.zoom(),
 				Settings.PLAYER_HEIGHT * Settings.zoom()
 			),
-			null
+			null // Do not apply any attributes yet
 		);
+		// Connect KeyListener of game to player
+		this.addKeyListener(player);
 
+
+		// Load entities from level
 		this.entities.addAll(this.lvl.getEntities());
 
+		// Create camera from level
 		this.cam = new Camera(this.lvl.getLevel(this.handleTile, Settings.zoom()));
 
+		// Close menu
 		this.menu.setVisible(false);
 
-		this.addKeyListener(player);
-		this.renderer = new Renderer();
-		this.renderer.start();
-		this.running = true;
-		this.endSequence = false;
+		// Create new running loop
+		this.renderer = new Renderer(); // Create separate game thread
+		this.renderer.start();          // Start thread
+		this.running = true;            // Set level as running
+		this.endSequence = false;       // Disable end sequence (game over screen)
 	} /* End method startGame */
 
 
 	/**
-	 * Provides a separate render thread.
+	 * Provide a separate render thread.
 	 *
-	 * The implementation is the same from my Pong project.
+	 * The Renderer inner class provides a separate rendering thread for
+	 * each level as a main game loop. It handles updating positions of
+	 * items and redrawing frames without blocking the main Game class.
 	 */
 	private class Renderer extends Thread {
 
+		/**
+		 * Run game loop until interrupted or Game is not running.
+		 */
 		@Override
 		public void run() {
 			long prevT = System.nanoTime(); // Previous time (ns)
@@ -375,18 +478,18 @@ public class Game extends JPanel implements ActionListener {
 
 			double diffT;                   // Difference in time
 
-			// While level is running
+			// While level is active
 			while (running && (!this.isInterrupted())) {
 				currT = System.nanoTime();
-				diffT = (currT - prevT) / Settings.NANOS;
+				diffT = (currT - prevT) / Settings.NANOS; // Difference in time
 				prevT = currT;
 
 				try {
 				// Invoke from the Swing thread for best practices
+				// Use a Runnable to update values and render to screen
 				SwingUtilities.invokeAndWait(new Updater(diffT));
 				} catch (Exception e) {
-					// If error occurs, just create a new
-					// frame
+					// If error occurs, create new frame.
 					continue;
 				}
 			}
@@ -395,6 +498,14 @@ public class Game extends JPanel implements ActionListener {
 	} /* End class Renderer */
 
 
+	/**
+	 * Provide a Runnable object for Swing's AWT queue.
+	 *
+	 * Although the main game loop on a separate thread is a good time keeper,
+	 * Java Swing best practices are to update graphical elements in the Java
+	 * AWT (base rendering library) thread. This runnable allows the main
+	 * game loop to pass methods onto that thread for updating.
+	 */
 	private class Updater implements Runnable {
 
 		private double diffT;
@@ -402,7 +513,7 @@ public class Game extends JPanel implements ActionListener {
 		/**
 		 * Updater runs the actual update and redraw functions.
 		 *
-		 * It's a runnable class as that is what SwingUtilities requires.
+		 * SwingUtilities requires a runnable object to execute.
 		 */
 		public Updater(double diffT) {
 			super();
@@ -415,8 +526,8 @@ public class Game extends JPanel implements ActionListener {
 		 */
 		@Override
 		public void run() {
-			update(diffT);
-			repaint();
+			update(diffT); // Update data of all level elements
+			repaint();     // Display all level elements
 		} /* End implemented method run */
 
 	} /* End class Updater */
@@ -429,53 +540,79 @@ public class Game extends JPanel implements ActionListener {
 	 * during level load.
 	 */
 	public void update(double diffT) {
+		// Do not update Game level main loop if Game is not running
 		if (!this.running) { return; }
-		this.clock += diffT;
 
-		if (this.clock > 500 && endSequence) { 
+		/* Update clock */
+		this.clock += diffT; // add diffT to the clock
+		if (this.clock > 500 && endSequence) {
+			// After player dies or wins, there is a countdown until
+			// level exits to main menu
 			exitGame();
 		}
 
-		Shape bounds = this.lvl.getBounds();
-		Shape climbable = this.lvl.getClimbable(); // get climbable area
-		player.update(diffT, bounds, climbable);
+		/* Get areas to use to update entities */
+		Shape bounds = this.lvl.getBounds();       // get impassable areas
+		Shape climbable = this.lvl.getClimbable(); // get climbable areas
 
-		checkHittingBox();
+		/* Update player */
+		// Update player first, then other entities in order of precedence
+		player.update(diffT, bounds, climbable);
+		checkHittingBox(); // check if player hit box (dynamically create items)
+
+		/* Update other entities */
 		updateEntities(diffT, bounds);
 	} /* End method update */
 
-	public void updateEntities(double diffT, Shape bounds) {
-		Entity ent;
 
-		// Remove entities that are dead, etc.
+	/**
+	 * Update all entities loaded in the main game loop.
+	 *
+	 * @param diffT "difference in time" time adjustment per frame.
+	 * @param bounds level collision boxes for entities to be aware of and
+	 *               which entities should not go into.
+	 */
+	public void updateEntities(double diffT, Shape bounds) {
+		Entity ent; // Store the current entity during iteration.
+
+		// Store entities to be removed in an array
 		int toRemoveCnt = 0;
 		Entity[] toRemove = new Entity[this.entities.size()];
 
+		// Iterate over all entities in the level
 		for (int i = 0; i < this.entities.size(); i++) {
-			ent = this.entities.get(i);
-			ent.update(diffT, bounds);
+			ent = this.entities.get(i); // get entity from level
+			ent.update(diffT, bounds);  // update all entities
+
+			/* Check if entity is alive or not */
+			if (!ent.isAlive()) {
+				toRemove[toRemoveCnt++] = ent;
+				continue; // Skip to next entity
+			}
 
 			if (ent instanceof Enemy) {
+				/* Handle enemy-specific updates */
+				// If player touching enemy, player dies.
 				if (player.isTouching(ent.getBounds())) {
 					player.die();
 					this.clock = 0;
 					endSequence = true;
 				}
-				if (!ent.isAlive()) {
-					toRemove[toRemoveCnt] = ent;
-					toRemoveCnt++;
-				}
 			} else if (ent instanceof Flag) {
+				/* Handle flag-specific updates */
 				if (player.isTouching(ent.getBounds())) {
+					// Player win condition
 					this.clock = 0;
 					endSequence = true;
 				}
 			} else if (ent instanceof Item) {
+				/* Handle item-specific updates */
 				Item item = (Item) ent;
 				if (item.isTouching(player.getBounds())) {
+					// Apply item attribute to player
 					player.applyAttribute(item.getAttribute());
-					toRemove[toRemoveCnt] = item;
-					toRemoveCnt++;
+					// Item is expended
+					toRemove[toRemoveCnt++] = item;
 				}
 			}
 		}
@@ -489,9 +626,18 @@ public class Game extends JPanel implements ActionListener {
 	} /* End method updateEntities */
 
 
+	/**
+	 * Check if player is hitting any item boxes of the level.
+	 *
+	 * Itemboxes randomly generate rewards for the player in the form
+	 * of items appearing on top of them.
+	 */
 	public void checkHittingBox() {
+		// Get locations of all boxes currently in the level.
 		SpecBounds boxes = this.lvl.getSpecBounds();
 
+		// Check if box contains point right above player's head.
+		// If box does contain point, remove box
 		Area boxLocation = (Area) boxes.containsRemove(
 			player.getCentreX(),
 			player.getPoint().getY() - 5
@@ -540,12 +686,13 @@ public class Game extends JPanel implements ActionListener {
 
 		// Display level and entities
 		cam.beam(g2d, player, entities, Settings.zoom(), darken);
+		cam.showScore(g2d, this.font.deriveFont(40f), player.getCoins());
 
 		if (endSequence) {
 			if (this.player.isAlive()) {
 				cam.showMsg(g2d, this.font.deriveFont(80f), "Victory!");
 			} else {
-				cam.showMsg(g2d, this.font.deriveFont(80f),"You died . . .");
+				cam.showMsg(g2d, this.font.deriveFont(80f),"You died");
 			}
 		}
 	} /* End method paint */

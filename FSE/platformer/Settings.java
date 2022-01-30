@@ -1,9 +1,12 @@
 // ------------------------------------------------------------------------- //
-// Stores all in-game constants for easy reference                           //
+// The Settings class provides a global singleton instance from which other  //
+// objects may access game-wide constants and change game-wide settings.     //
 //                                                                           //
-// Author:      Leo Qi                                                       //
-// Start date:  2021-12-09                                                   //
-// Finish date:                                                              //
+// Package:  platformer                                                      //
+// Filename: Settings.java                                                   //
+// Author:   Leo Qi                                                          //
+// Class:    ICS4U St. Denis                                                 //
+// Date due: Jan. 30, 2022.                                                  //
 // ------------------------------------------------------------------------- //
 
 package platformer;
@@ -129,12 +132,27 @@ public class Settings {
 		synchronized(this) { this.levelHeight = height; }
 	} /* End method setZoom */
 
+
+	/* Game string constants */
+	public static final String TITLE = "Go Oust!"; // Name of game
+	public static final String FILE_EXT = "lvl";   // File extension for levels
+
 	/* Game units */
 	public static final int UNIT = 35; // Tile size at 1x zoom
 	public static final int SEP = 0;   // Separator between tiles in spritesheet
 
-	public static final double FRAMES_SEC = 120d;
-	public static final double NANOS = 1000000000d / FRAMES_SEC;
+	/* Game colours */
+	// Colours are all defined as either RGB (red-green-blue) or RGBA
+	// (red-green-blue-alpha)
+	public static final Color COLOUR_SKY   = new Color(208, 244, 247, 255);
+	public static final Color COLOUR_ROCK  = new Color(152, 152, 152);
+	public static final Color COLOUR_TITLE = new Color(120, 50, 150);
+	public static final Color COLOUR_GOLD  = new Color(255, 203, 45);
+
+	/* Display constants */
+	public static final double FRAMES_SEC = 120d; // Frames per second of game
+	public static final double NANOS = 1000000000d / FRAMES_SEC; // Wait of game loop
+	public static final float  SCORE_SEP = 25; // Separation between score
 
 	public static final int PLAYER_WIDTH = 33;
 	public static final int PLAYER_HEIGHT = 46;
@@ -147,15 +165,10 @@ public class Settings {
 	public static final double E_MIN_SPD = 0.2;
 	public static final double E_GRAVITY = 0.09;
 
-	public static final int P_SPACE = 0;
-
-	public static final String FILE_EXT = "lvl";
-
-	public static final Color COLOUR_SKY = new Color(208, 244, 247, 255);
-	public static final Color COLOUR_ROCK = new Color(152, 152, 152);
-	public static final Color COLOUR_TITLE = new Color(120, 50, 150);
-
 	public static final int SLIME_WIDTH = 26;
 	public static final int SLIME_HEIGHT = 14;
+
+	public static final int F_WIDTH  = 37;
+	public static final int F_HEIGHT = 18;
 
 } /* End class Settings */

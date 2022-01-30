@@ -25,12 +25,10 @@ public class Player extends Entity implements KeyListener {
 	boolean lastLeft = false;
 	boolean climbing = false;
 
-	public Player(
-		int hp, SpriteHandler sh, Rectangle2D bounds,
-		Attribute[] attrs
-	) {
-		super(hp, sh, bounds, attrs);
+	public Player(SpriteHandler sh, Rectangle2D bounds, Attribute[] attrs) {
+		super(sh, bounds, attrs);
 		super.applyAttribute(Attribute.LIGHTING);
+		super.tickTime = 5;
 	} /* End constructor */
 
 

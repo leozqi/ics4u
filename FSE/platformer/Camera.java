@@ -195,23 +195,36 @@ public class Camera {
 
 
 	/**
-	 * Apply "tunnel effect" to a level where everything is dark except
-	 * for a radius around the player.
+	 * Draw coin score of player onto element.
+	 *
+	 * This element could be a BufferedImage or a Swing component via a
+	 * Graphics2D object.
 	 *
 	 * @param g2d Graphics2D object.
-	 * @param focus focus to centre on.
+	 * @param font the font to use for the message.
+	 * @param score score to display.
+	 * @param icon BufferedImage to display next to score
 	 */
-	public void applyDarkness(Graphics2D g2d, Entity focus, float lighting) {
-		Point2D centre = focus.getPoint(); // get location to centre
+	public void showScore(Graphics2D g2d, Font font, int score) {
+		g2d.setFont(font); // Set font to draw message with
+		g2d.setColor(Settings.COLOUR_GOLD); // Score should be golden!
+		g2d.setRenderingHints(smoothText);  // Render text smoothly.
+		String msg = String.format("Coins: %04d", score); // Message to draw.
 
-		RadialGradientPaint rgp = new RadialGradientPaint(
-			centre, lighting, new float[] {0f, 1f}, new Color[] {
-			new Color(0, 0, 0, 0), new Color(0, 0, 0, 255)
-		});
+		// Calculate size of final message with FontMetrics
+		FontMetrics fm = g2d.getFontMetrics();
+		Rectangle2D fontArea = fm.getStringBounds(msg, g2d);
 
-		g2d.setPaint(rgp);
-		g2d.fill(new Rectangle2D.Double(0, 0, Settings.resX(), Settings.resY()));
-	} /* End method showMsg */
+		// Get position to draw score
+		float xPos = (float) ( // X position is on rightermost of screen
+			Settings.resX()
+			- fontArea.getMaxX()
+			- (Settings.SCORE_SEP * 2)
+		);
+		float yPos = (float) (0 + fontArea.getMaxY() + Settings.SCORE_SEP); // Y pos is on top
 
+		// Draw score with additional offset
+		g2d.drawString(msg, xPos, yPos);
+	} /* End method showScore */
 
 } /* End class Camera */

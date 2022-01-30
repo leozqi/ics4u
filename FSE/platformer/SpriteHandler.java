@@ -135,7 +135,6 @@ public class SpriteHandler {
 		int width  = (int)(this.tileX * this.zoom);
 		int height = (int)(this.tileY * this.zoom);
 
-		try {
 		if (reversed) {
 			// Image is reversed so get from reversed sheet.
 			// Start from end (WIDTH) instead of 0 because sheet
@@ -146,11 +145,8 @@ public class SpriteHandler {
 				width, height
 			);
 		}
+		// Image is not reversed; get from normal sheet
 		return this.sheet.getSubimage(xPos, yPos, width, height);
-		} catch (Exception e) {
-			System.out.println("" + gridX + " " + gridY + " " + reversed);
-			return null;
-		}
 	} /* End method getTile */
 
 

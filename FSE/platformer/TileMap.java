@@ -139,6 +139,8 @@ public class TileMap {
 				return new TileMap(EntityType.G_COIN);
 			case 'T': // Torch
 				return new TileMap(EntityType.TORCH);
+			case '%': // Fly
+				return new TileMap(EntityType.FLY);
 		/* SPECIAL EFFECTS */
 			case 'x': // BOX
 				return new TileMap(0, 0);
@@ -151,9 +153,9 @@ public class TileMap {
 			case '+': // BLOCK
 				return new TileMap(4, 0);
 			case 'B': // BRIDGE
-				return new TileMap(5, 0, Attribute.NOT_SQUARE);
+				return new TileMap(5, 0, Attribute.RECTANGULAR);
 			case 'b': // BRIDGE_HORIZONTAL
-				return new TileMap(6, 0, Attribute.NOT_SQUARE);
+				return new TileMap(6, 0, Attribute.RECTANGULAR);
 			case 'F': // FENCE
 				return new TileMap(7, 0, Attribute.PASSABLE);
 			case 'f': // FENCE_BROKEN
@@ -214,13 +216,13 @@ public class TileMap {
 			case '>': // BLOCK_LEDGE_SHARP_RIGHT
 				return new TileMap(6, biome.row, Attribute.NOT_SQUARE);
 			case '.': // PLATFORM_ROUNDED
-				return new TileMap(7, biome.row, Attribute.NOT_SQUARE);
+				return new TileMap(7, biome.row, Attribute.RECTANGULAR);
 			case ':': // PLATFORM_ROUNDED_LEFT
-				return new TileMap(8, biome.row, Attribute.NOT_SQUARE);
+				return new TileMap(8, biome.row, Attribute.RECTANGULAR);
 			case '^': // PLATFORM_CENTER
-				return new TileMap(9, biome.row, Attribute.NOT_SQUARE);
+				return new TileMap(9, biome.row, Attribute.RECTANGULAR);
 			case ';': // PLATFORM_ROUNDED_RIGHT
-				return new TileMap(10, biome.row, Attribute.NOT_SQUARE);
+				return new TileMap(10, biome.row, Attribute.RECTANGULAR);
 			case '/': // SLOPE_LEFT
 				return new TileMap(11, biome.row, Attribute.NOT_SQUARE);
 			case '\'': // SLOPE_CORNER_LEFT

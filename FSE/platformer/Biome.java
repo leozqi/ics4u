@@ -12,10 +12,10 @@ package platformer;
 
 public enum Biome {
 	GRASSY(1, 'g'), // Grass theme
-	DIRTY(2, 'd'),
-	ROCKY(3, 'r'),
-	SANDY(4, 'a'),
-	SNOWY(5, 's');
+	DIRTY(2, 'd'),  // Dirt theme
+	ROCKY(3, 'r'),  // Underground rocky theme
+	SANDY(4, 'a'),  // Desert theme
+	SNOWY(5, 's');  // Snowy theme
 
 	public final int  row;
 	public final char rep;
@@ -33,4 +33,3 @@ public enum Biome {
 	} /* End constructor */
 
 } /* End class Biome */
-

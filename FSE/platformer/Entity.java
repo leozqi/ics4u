@@ -23,7 +23,6 @@ public class Entity {
 	/* Properties */
 	Rectangle2D.Double bounds; // Bounding-box (collision box) for entity
 	boolean alive = true; // Whether entitiy is alive or not
-	int hp;       // Health points of the entity
 	int coin = 0; // Coins of the entity
 	ArrayList<Attribute> attrs = new ArrayList<Attribute>();
 
@@ -44,6 +43,7 @@ public class Entity {
                            // (before hitting the ground)
 	int jumpLimit = 1; // Limit of jumps before entity cannot jump
 	boolean right = false; // Horizontal direction of sprite (left or right)
+	boolean stationary = false; // Stationary Entities update ticks when not moving
 
 	/* Sprites */
 	SpriteHandler costumes; // Sprite animations for the entity
@@ -51,24 +51,28 @@ public class Entity {
 
 	/* Time */
 	double clock = 0d; // Clock for sprite change cycles
-	double tickTime = 10d; // Time to effect one animation cycle
+	double tickTime = 30d; // Time to update one tick cycle
 
 	/**
 	 * Create a new entity.
 	 *
-	 * Entities are the parts of the game that do not have a fixed position
-	 * within the level. They should usually be created through a subclass
-	 * of Entity, like Player or Item.
+	 * Entities represent components of the game that must be able to change
+	 * after the level is loaded. They may display animated sprites that
+	 * are able to move within the level.
+	 *
+	 * The base entity class provides common functionality for all subclasses
+	 * including movement with collision detection and sprite management.
+	 *
+	 * Actual types of entities should be created through a subclass like
+	 * the Player or Item classes.
 	 */
 	public Entity(
-		int hp, SpriteHandler costumes, Rectangle2D bounds,
-		Attribute[] attrs
+		SpriteHandler costumes, Rectangle2D bounds, Attribute[] attrs
 	) {
-		this.hp = hp;
-		this.costumes = costumes;
-		this.bounds = (Rectangle2D.Double) bounds;
+		this.costumes = costumes;                  // Store costumes of entity
+		this.bounds = (Rectangle2D.Double) bounds; // Store coordinates of entity
 
-		// Process any attributes
+		// Process and attributes
 		if (attrs == null) { return; }
 		for (int index = 0; index < attrs.length; index++) {
 			// Loop over attributes and apply attributes
@@ -78,15 +82,11 @@ public class Entity {
 
 
 	/**
-	 * Get the current health of the entity.
-	 */
-	public int getHealth() { return hp; }
-
-
-	/**
 	 * Apply a status effect to the entity.
+	 *
+	 * @param effect Effect to apply.
 	 */
-	public void applyStatus(Effect e) { effects.add(e); }
+	public void applyStatus(Effect effect) { effects.add(effect); }
 
 
 	/**
@@ -95,13 +95,15 @@ public class Entity {
 	 * A dead entity will stop moving except to drop out of the screen.
 	 */
 	public void die() {
+		// If already dead, do not reset this method
+		if (!this.alive) { return; }
+
 		this.alive = false; // "Kill" the entity.
 
 		this.setAccelX(0);  // Stop moving in both axis.
 		this.setVelX(0);
-
+		this.setVelY(-Settings.P_JUMP);
 		this.setAccelY(Settings.E_GRAVITY);
-		this.jump(-Settings.P_JUMP);
 	} /* End method die */
 
 
@@ -128,9 +130,6 @@ public class Entity {
 		case COIN_100:    // Add one hundred coins to Entity
 			coin += 100;
 			break;
-		case HP_1:        // Add one HP to Entity
-			hp += 1;
-			break;
 		default:
 			this.attrs.add(attr);
 		}
@@ -156,10 +155,7 @@ public class Entity {
 	 */
 	public void update(double diffT, Shape bounds) {
 		/* Update the animation tick */
-		if (!this.isMovingLeft() && !this.isMovingRight()) {
-			// Don't update animation tick as entity is not moving
-			this.clock = 0;
-		} else {
+		if (this.isMovingLeft() || this.isMovingRight() || this.stationary) {
 			// Update animation tick
 			this.clock += diffT;
 
@@ -168,6 +164,10 @@ public class Entity {
 				updateTick(); // Per-tick constant time update.
 				clock = 0; // Reset clock
 			}
+		} else {
+			// Don't update animation tick as entity is not moving
+			// OR entity is not stationary
+			this.clock = 0;
 		}
 
 		/* Check for death */
@@ -365,6 +365,9 @@ public class Entity {
 	 * main game loop.
 	 */
 	public void checkDeath() {
+		// If already dead, do not recheck
+		if (!this.alive) { return; }
+
 		/* Death due to falling out of the world */
 		if (this.bounds.getMinY() > Settings.levelHeight()) {
 			this.die();
@@ -434,6 +437,7 @@ public class Entity {
 	public boolean isMovingDown()         { return (this.yAccel > 0); }
 	public boolean isTouchingGround()     { return (this.yVel == 0);  }
 	public boolean isAlive()              { return this.alive;        }
+	public int getCoins()                 { return this.coin;         }
 
 	/**
 	 * Jump with a starting velocity of `vel`.

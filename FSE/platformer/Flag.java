@@ -8,24 +8,21 @@
 // Date due: Jan. 30, 2022.                                                  //
 // ------------------------------------------------------------------------- //
 
-
 package platformer;
 
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.awt.geom.Rectangle2D;
 
 public class Flag extends Entity {
 
 	/**
-	 * Represents one consumable item that the player can take.
+	 * Represents the game endgoal.
 	 * 
-	 * Items come in the form of coins for score and diamonds for effects.
-	 * The sprite of an item and the type are both convienently indicated by
-	 * the ItemType class.
+	 * When the player reaches the animated flag, the game ends as victory.
 	 */
 	public Flag(double x, double y, SpriteHandler costumes) {
 		super( // Use the constructor of base Entity for most setup
-			0,              // Health points (none since it is item)
 			costumes,       // SpriteHandler for costumes
 
 			// Get how big the item is as a Rectangle
@@ -36,12 +33,18 @@ public class Flag extends Entity {
 			(Rectangle2D) costumes.getBounds(0, 0).clone(),
 			null // No attributes
 		);
-
+		super.tickTime = 30;
+		super.stationary = true;
 		this.setX(x); // Set X and Y of bounds
 		this.setY(y);
 	} /* End constructor */
 
 
+	/**
+	 * Update animation step of flag.
+	 *
+	 * The animation step of the flag is updated every tick.
+	 */
 	@Override
 	public void updateTick() {
 		/* Update sprite count (animation step) */
@@ -54,9 +57,7 @@ public class Flag extends Entity {
 
 
 	/**
-	 * Get image representation of item.
-	 *
-	 * For items, simply look like the object to get.
+	 * Get image representation of Flag's current animation step.
 	 */
 	@Override
 	public BufferedImage getSprite() {

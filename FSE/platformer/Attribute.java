@@ -10,6 +10,14 @@
 
 package platformer;
 
+/**
+ * Properties of entities or tiles that may be applied or given on creation.
+ *
+ * Entities and tiles may choose to interpret Attributes differently; they are
+ * simply flexible markers that can be applied to signify specific properties.
+ *
+ * Each Attribute's interpretation is stated next to its definition below.
+ */
 public enum Attribute {
 
 	NONE,
@@ -23,11 +31,12 @@ public enum Attribute {
 		HP_1,        // Give one health
 
 	/* Tile Attributes */
-		EMPTY,
-		PASSABLE,
-		ITEMBOX,
-		NOT_SQUARE,
-		CLIMBABLE,
-		DEADLY
+		EMPTY,       // Tile represents empty space
+		PASSABLE,    // Tile is passable (not blocking) for Entities
+		ITEMBOX,     // Tile provides gems
+		NOT_SQUARE,  // Tile is not square and not rectangular
+		RECTANGULAR, // Tile is rectangular but not square
+		CLIMBABLE,   // Tile is climbable by the player
+		DEADLY       // Tile is deadly to the player
 
 } /* End enum Attribute */

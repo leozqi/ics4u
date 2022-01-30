@@ -1,9 +1,11 @@
 // ------------------------------------------------------------------------- //
-// Represents an effect (like a superpower) on an entity.                    //
+// The Effect class represents timed effects that may be applied to entities.//
 //                                                                           //
-// Author:      Leo Qi                                                       //
-// Start date:  2022-01-17                                                   //
-// Finish date: 2022-01-31                                                   //
+// Package:  platformer                                                      //
+// Filename: Effect.java                                                     //
+// Author:   Leo Qi                                                          //
+// Class:    ICS4U St. Denis                                                 //
+// Date due: Jan. 30, 2022.                                                  //
 // ------------------------------------------------------------------------- //
 
 package platformer;
@@ -12,7 +14,7 @@ import java.util.concurrent.*;
 
 abstract class Effect implements Delayed {
 
-	private long startTime;
+	private long startTime; // starting time of the effect
 
 	/**
 	 * Classes should implement their own Effect with this class.
@@ -21,13 +23,13 @@ abstract class Effect implements Delayed {
 	 * method should be overriden to apply the effect to an Entity. The
 	 * actual "delay" is from use of the Java DelayQueue Collections object:
 	 *
-	 * https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/DelayQueue.html
+	 * <https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/DelayQueue.html>
 	 *
 	 * Delay-setting code, ie. how to implement the "Delayed" object type
 	 * with the getDelay and compareTo methods, were taken almost verbatim
 	 * from this blog post:
 	 *
-	 * https://www.baeldung.com/java-delay-queue
+	 * <https://www.baeldung.com/java-delay-queue>
 	 *
 	 * Note that Ints.saturatedCast, a method from a Google library, is
 	 * replaced with a Java standard library Math.toIntExact with a fallback
@@ -35,7 +37,7 @@ abstract class Effect implements Delayed {
 	 */
 	public Effect(long delayMs) {
 		this.startTime = System.currentTimeMillis() + delayMs;
-	}
+	} /* End constructor */
 
 
 	/**
@@ -47,7 +49,7 @@ abstract class Effect implements Delayed {
 	public long getDelay(TimeUnit unit) {
 		long diff = startTime - System.currentTimeMillis();
 		return unit.convert(diff, TimeUnit.MILLISECONDS);
-	}
+	} /* End method getDelay */
 
 
 	/**
@@ -63,10 +65,11 @@ abstract class Effect implements Delayed {
 		} catch (ArithmeticException e) {
 			return 0; 
 		}
-	}
+	} /* End method compareTo */
 
 	/**
 	 * Effects should implement this method to create their functionality.
 	 */
 	abstract void apply(Entity e);
-}
+
+} /* End class Effect */

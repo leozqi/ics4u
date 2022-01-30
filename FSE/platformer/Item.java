@@ -24,7 +24,6 @@ public class Item extends Entity {
 	 */
 	public Item(double x, double y, SpriteHandler costumes, EntityType type) {
 		super( // Use the constructor of base Entity for most setup
-			0,              // Health points (none since it is item)
 			costumes,       // SpriteHandler for costumes
 
 			// Get how big the item is as a Rectangle

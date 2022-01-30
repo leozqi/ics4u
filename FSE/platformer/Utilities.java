@@ -57,14 +57,18 @@ public class Utilities {
 	 * Although this method has a large computation time penalty, it is only
 	 * done once for every object in the level and enables fast collision
 	 * checking.
+	 *
+	 * @param bi BufferedImage to process
+	 * @param xOffset x position of the final area
+	 * @param yOffset y position of the final area
 	 */
 	public static Area exactBounds(BufferedImage bi, int xOffset, int yOffset) {
 		Area ret = new Area(); // Area to store final bounds.
 		Color color;  // Color object to determin transparency.
 
 		// Iterate over all pixels (x then y)
-		for (int y = 0; y < bi.getHeight(); y++) {
-			for (int x = 0; x < bi.getWidth(); x++) {
+		for (int y = 1; y < bi.getHeight()-1; y++) {
+			for (int x = 1; x < bi.getWidth()-1; x++) {
 				// Get color from BufferedImage pixel getRGB
 				// True; include alpha value
 				color = new Color(bi.getRGB(x, y), true);
@@ -106,10 +110,20 @@ public class Utilities {
 	/**
 	 * Mirror-flip an image horizontally.
 	 *
-	 * This function was taken from the following blog post (with minor
+	 * This method was taken from the following blog post (with minor
 	 * modifications):
 	 *
 	 * <https://anilfilenet.wordpress.com/2011/01/22/flipping-an-image-horizontally-and-vertically-in-java/>
+	 *
+	 * A modification was made to allow the method to read PNG files with
+	 * improper types (according to Java, at least). Some PNG files return
+	 * a type of zero after being read by Java's ImageIO library which
+	 * causes an error when using that type to flip an image. This error
+	 * and potential solutions were discussed here:
+	 *
+	 * <https://stackoverflow.com/q/5836128>
+	 *
+	 * This method uses a default type of TYPE_INT_ARGB to deal such PNG files.
 	 *
 	 * @param bi BufferedImage to flip.
 	 * @return BufferedImage flipped image.
@@ -118,9 +132,18 @@ public class Utilities {
 		int w = bi.getWidth();
 		int h = bi.getHeight();
 
-		BufferedImage ret = new BufferedImage(w, h, bi.getType());
+		// Sometimes PNG files will have an invalid type of 0.
+		// In that case modify the type to a default type to process
+		int type = bi.getType();
+		if (bi.getType() == 0) {
+			type = BufferedImage.TYPE_INT_ARGB;
+		}
+
+		BufferedImage ret = new BufferedImage(w, h, type);
 
 		Graphics2D g2d = ret.createGraphics();
+		// Map each original corner of BufferedImage to opposite corner
+		// to perform "flip"
 		g2d.drawImage(bi, 0, 0, w, h, w, 0, 0, h, null);
 		g2d.dispose();
 		return ret;
@@ -149,8 +172,15 @@ public class Utilities {
 		// width and height
 		Image tmp = img.getScaledInstance(w, h, Image.SCALE_SMOOTH);
 
+		// Sometimes PNG files will have an invalid type of 0.
+		// In that case modify the type to a default type to process
+		int type = img.getType();
+		if (img.getType() == 0) {
+			type = BufferedImage.TYPE_INT_ARGB;
+		}
+
 		// Create a new BufferedImage to store this scaled image
-		BufferedImage ret = new BufferedImage(w, h, img.getType());
+		BufferedImage ret = new BufferedImage(w, h, type);
 
 		// Transfer temporary image to new BufferedImage
 		Graphics2D g2d = ret.createGraphics();
